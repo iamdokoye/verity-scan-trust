@@ -1,26 +1,104 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { QrCode, Camera } from "lucide-react";
+import { Logo } from "@/components/votta/Logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { INSTITUTION } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Votta — Verify any academic credential instantly" },
+      { name: "description", content: "Public verification portal for tamper-evident academic records." },
+      { property: "og:title", content: "Votta — Credential Verification" },
+      { property: "og:description", content: "Verify any academic credential instantly." },
+    ],
+  }),
+  component: VerifyHome,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function VerifyHome() {
+  const [token, setToken] = useState("");
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="flex min-h-screen flex-col bg-background">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-3xl">
+          <div className="mb-10 flex flex-col items-center text-center">
+            <Logo />
+            <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Verify any academic credential instantly.
+            </h1>
+            <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+              Scan a QR code from a Votta-issued document, or enter the verification token printed on it.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-lg border border-border bg-card p-6">
+              <div className="mb-3 text-sm font-medium text-foreground">Scan QR Code</div>
+              <div className="flex aspect-square w-full flex-col items-center justify-center rounded-md border-2 border-dashed border-border bg-muted/40 p-6 text-center">
+                <Camera className="h-10 w-10 text-muted-foreground" />
+                <div className="mt-3 text-sm font-medium text-foreground">Scan QR Code</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Point your camera at the code on the document.
+                </div>
+                <Button variant="outline" className="mt-4" size="sm">
+                  <QrCode className="h-4 w-4" /> Open scanner
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-card p-6">
+              <div className="mb-3 text-sm font-medium text-foreground">Enter Verification Token</div>
+              <label className="mb-2 block text-xs text-muted-foreground">Verification token</label>
+              <Input
+                placeholder="e.g. VTA-7K3M-9P2Q-XR4N"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="font-mono"
+              />
+              <Button asChild className="mt-4 w-full" size="lg">
+                <Link
+                  to={
+                    token.trim().toUpperCase().startsWith("VTA-")
+                      ? "/verify/result"
+                      : token.trim() === ""
+                        ? "/verify/result"
+                        : "/verify/not-found"
+                  }
+                  search={{ token: token || "VTA-7K3M-9P2Q-XR4N" }}
+                >
+                  Verify
+                </Link>
+              </Button>
+              <div className="mt-3 text-center text-xs text-muted-foreground">
+                Try sample tokens:{" "}
+                <Link to="/verify/result" className="text-secondary hover:underline">verified</Link>
+                {" · "}
+                <Link to="/verify/tampered" className="text-secondary hover:underline">tampered</Link>
+                {" · "}
+                <Link to="/verify/not-found" className="text-secondary hover:underline">not found</Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex items-center gap-4">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Need access to your records?{" "}
+            <Link to="/student" className="text-secondary hover:underline">Student portal</Link>
+            {" · "}
+            <Link to="/admin" className="text-secondary hover:underline">Administration</Link>
+          </p>
+        </div>
+      </main>
+      <footer className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground">
+        {INSTITUTION} · Powered by Votta
+      </footer>
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
