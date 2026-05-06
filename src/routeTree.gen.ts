@@ -9,15 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StudentRouteImport } from './routes/student'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudentIndexRouteImport } from './routes/student.index'
 import { Route as VerifyTamperedRouteImport } from './routes/verify.tampered'
 import { Route as VerifyResultRouteImport } from './routes/verify.result'
 import { Route as VerifyNotFoundRouteImport } from './routes/verify.not-found'
+import { Route as StudentShareRouteImport } from './routes/student.share'
+import { Route as StudentResultsRouteImport } from './routes/student.results'
+import { Route as StudentDocumentsRouteImport } from './routes/student.documents'
 
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StudentIndexRoute = StudentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudentRoute,
 } as any)
 const VerifyTamperedRoute = VerifyTamperedRouteImport.update({
   id: '/verify/tampered',
@@ -34,41 +49,93 @@ const VerifyNotFoundRoute = VerifyNotFoundRouteImport.update({
   path: '/verify/not-found',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentShareRoute = StudentShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentResultsRoute = StudentResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentDocumentsRoute = StudentDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => StudentRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/student': typeof StudentRouteWithChildren
+  '/student/documents': typeof StudentDocumentsRoute
+  '/student/results': typeof StudentResultsRoute
+  '/student/share': typeof StudentShareRoute
   '/verify/not-found': typeof VerifyNotFoundRoute
   '/verify/result': typeof VerifyResultRoute
   '/verify/tampered': typeof VerifyTamperedRoute
+  '/student/': typeof StudentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/student/documents': typeof StudentDocumentsRoute
+  '/student/results': typeof StudentResultsRoute
+  '/student/share': typeof StudentShareRoute
   '/verify/not-found': typeof VerifyNotFoundRoute
   '/verify/result': typeof VerifyResultRoute
   '/verify/tampered': typeof VerifyTamperedRoute
+  '/student': typeof StudentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/student': typeof StudentRouteWithChildren
+  '/student/documents': typeof StudentDocumentsRoute
+  '/student/results': typeof StudentResultsRoute
+  '/student/share': typeof StudentShareRoute
   '/verify/not-found': typeof VerifyNotFoundRoute
   '/verify/result': typeof VerifyResultRoute
   '/verify/tampered': typeof VerifyTamperedRoute
+  '/student/': typeof StudentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/verify/not-found' | '/verify/result' | '/verify/tampered'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/verify/not-found' | '/verify/result' | '/verify/tampered'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/student'
+    | '/student/documents'
+    | '/student/results'
+    | '/student/share'
     | '/verify/not-found'
     | '/verify/result'
     | '/verify/tampered'
+    | '/student/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/student/documents'
+    | '/student/results'
+    | '/student/share'
+    | '/verify/not-found'
+    | '/verify/result'
+    | '/verify/tampered'
+    | '/student'
+  id:
+    | '__root__'
+    | '/'
+    | '/student'
+    | '/student/documents'
+    | '/student/results'
+    | '/student/share'
+    | '/verify/not-found'
+    | '/verify/result'
+    | '/verify/tampered'
+    | '/student/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  StudentRoute: typeof StudentRouteWithChildren
   VerifyNotFoundRoute: typeof VerifyNotFoundRoute
   VerifyResultRoute: typeof VerifyResultRoute
   VerifyTamperedRoute: typeof VerifyTamperedRoute
@@ -76,12 +143,26 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/student/': {
+      id: '/student/'
+      path: '/'
+      fullPath: '/student/'
+      preLoaderRoute: typeof StudentIndexRouteImport
+      parentRoute: typeof StudentRoute
     }
     '/verify/tampered': {
       id: '/verify/tampered'
@@ -104,11 +185,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyNotFoundRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/share': {
+      id: '/student/share'
+      path: '/share'
+      fullPath: '/student/share'
+      preLoaderRoute: typeof StudentShareRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/results': {
+      id: '/student/results'
+      path: '/results'
+      fullPath: '/student/results'
+      preLoaderRoute: typeof StudentResultsRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/documents': {
+      id: '/student/documents'
+      path: '/documents'
+      fullPath: '/student/documents'
+      preLoaderRoute: typeof StudentDocumentsRouteImport
+      parentRoute: typeof StudentRoute
+    }
   }
 }
 
+interface StudentRouteChildren {
+  StudentDocumentsRoute: typeof StudentDocumentsRoute
+  StudentResultsRoute: typeof StudentResultsRoute
+  StudentShareRoute: typeof StudentShareRoute
+  StudentIndexRoute: typeof StudentIndexRoute
+}
+
+const StudentRouteChildren: StudentRouteChildren = {
+  StudentDocumentsRoute: StudentDocumentsRoute,
+  StudentResultsRoute: StudentResultsRoute,
+  StudentShareRoute: StudentShareRoute,
+  StudentIndexRoute: StudentIndexRoute,
+}
+
+const StudentRouteWithChildren =
+  StudentRoute._addFileChildren(StudentRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  StudentRoute: StudentRouteWithChildren,
   VerifyNotFoundRoute: VerifyNotFoundRoute,
   VerifyResultRoute: VerifyResultRoute,
   VerifyTamperedRoute: VerifyTamperedRoute,
