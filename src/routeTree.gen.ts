@@ -10,33 +10,68 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VerifyTamperedRouteImport } from './routes/verify.tampered'
+import { Route as VerifyResultRouteImport } from './routes/verify.result'
+import { Route as VerifyNotFoundRouteImport } from './routes/verify.not-found'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyTamperedRoute = VerifyTamperedRouteImport.update({
+  id: '/verify/tampered',
+  path: '/verify/tampered',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyResultRoute = VerifyResultRouteImport.update({
+  id: '/verify/result',
+  path: '/verify/result',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyNotFoundRoute = VerifyNotFoundRouteImport.update({
+  id: '/verify/not-found',
+  path: '/verify/not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/verify/not-found': typeof VerifyNotFoundRoute
+  '/verify/result': typeof VerifyResultRoute
+  '/verify/tampered': typeof VerifyTamperedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/verify/not-found': typeof VerifyNotFoundRoute
+  '/verify/result': typeof VerifyResultRoute
+  '/verify/tampered': typeof VerifyTamperedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/verify/not-found': typeof VerifyNotFoundRoute
+  '/verify/result': typeof VerifyResultRoute
+  '/verify/tampered': typeof VerifyTamperedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/verify/not-found' | '/verify/result' | '/verify/tampered'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/verify/not-found' | '/verify/result' | '/verify/tampered'
+  id:
+    | '__root__'
+    | '/'
+    | '/verify/not-found'
+    | '/verify/result'
+    | '/verify/tampered'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  VerifyNotFoundRoute: typeof VerifyNotFoundRoute
+  VerifyResultRoute: typeof VerifyResultRoute
+  VerifyTamperedRoute: typeof VerifyTamperedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +83,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify/tampered': {
+      id: '/verify/tampered'
+      path: '/verify/tampered'
+      fullPath: '/verify/tampered'
+      preLoaderRoute: typeof VerifyTamperedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify/result': {
+      id: '/verify/result'
+      path: '/verify/result'
+      fullPath: '/verify/result'
+      preLoaderRoute: typeof VerifyResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify/not-found': {
+      id: '/verify/not-found'
+      path: '/verify/not-found'
+      fullPath: '/verify/not-found'
+      preLoaderRoute: typeof VerifyNotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  VerifyNotFoundRoute: VerifyNotFoundRoute,
+  VerifyResultRoute: VerifyResultRoute,
+  VerifyTamperedRoute: VerifyTamperedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
