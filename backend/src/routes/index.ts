@@ -1,0 +1,24 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes';
+import institutionRoutes from './institution.routes';
+import departmentRoutes from './departments.routes';
+import studentRoutes from './students.routes';
+import sessionRoutes from './sessions.routes';
+import courseRoutes from './courses.routes';
+import resultRoutes from './results.routes';
+import documentRoutes from './documents.routes';
+import verifyRoutes from './verify.routes';
+import auditRoutes from './audit.routes';
+
+export const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/institution', institutionRoutes);
+router.use('/departments', departmentRoutes);
+router.use('/students', studentRoutes);
+router.use('/sessions', sessionRoutes);
+router.use('/courses', courseRoutes);
+router.use('/results', resultRoutes);
+router.use('/documents', documentRoutes);
+router.use('/verify', verifyRoutes);
+router.use('/audit', auditRoutes);

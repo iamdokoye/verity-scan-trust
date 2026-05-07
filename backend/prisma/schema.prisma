@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  student
+
+  @@map("user_role")
+}
+
+enum DocumentType {
+  degree_certificate
+  transcript
+  other
+
+  @@map("document_type")
+}
+
+enum DocumentStatus {
+  pending_approval
+  approved
+  rejected
+  superseded
+  revoked
+
+  @@map("document_status")
+}
+
+enum SemesterType {
+  first
+  second
+
+  @@map("semester_type")
+}
+
+enum VerificationStatus {
+  verified
+  tampered
+  invalid_signature
+  not_found
+  superseded
+  revoked
+
+  @@map("verification_status")
+}
+
+enum AuditAction {
+  USER_LOGIN
+  USER_LOGOUT
+  STUDENT_CREATED
+  STUDENT_UPDATED
+  RESULT_CREATED
+  RESULT_UPDATED
+  RESULT_LOCKED
+  DOCUMENT_UPLOADED
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  DOCUMENT_SUPERSEDED
+  DOCUMENT_REVOKED
+  CORRECTION_REQUESTED
+  CORRECTION_APPROVED
+  CORRECTION_REJECTED
+  TRANSCRIPT_GENERATED
+  VERIFICATION_PERFORMED
+  CERTIFICATE_MISMATCH
+  DUPLICATE_HASH_DETECTED
+  CROSS_STUDENT_DUPLICATE
+
+  @@map("audit_action")
+}
+
+enum AuditSeverity {
+  info
+  warning
+  critical
+
+  @@map("audit_severity")
+}
+
+model Institution {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(200)
+  acronym      String   @db.VarChar(20)
+  state        String?  @db.VarChar(80)
+  adminEmail   String   @unique @map("admin_email") @db.VarChar(200)
+  publicKeyPem String?  @map("public_key_pem")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  profiles    Profile[]
+  departments Department[]
+  students    Student[]
+  sessions    AcademicSession[]
+  documents   Document[]
+
+  @@map("institutions")
+}
+
+model Profile {
+  id            String   @id
+  institutionId String   @map("institution_id")
+  role          UserRole @default(student)
+  fullName      String?  @map("full_name") @db.VarChar(200)
+  email         String   @db.VarChar(200)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  institution     Institution @relation(fields: [institutionId], references: [id])
+  student         Student?    @relation("StudentProfile")
+  uploadedDocs    Document[]  @relation("UploadedBy")
+  approvedDocs    Document[]  @relation("ApprovedBy")
+  revokedDocs     Document[]  @relation("RevokedBy")
+  uploadedResults Result[]
+  auditLogs       AuditLog[]
+
+  @@map("profiles")
+}
+
+model Department {
+  id            String   @id @default(uuid())
+  institutionId String   @map("institution_id")
+  name          String   @db.VarChar(200)
+  hodName       String?  @map("hod_name") @db.VarChar(200)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  institution Institution @relation(fields: [institutionId], references: [id])
+  students    Student[]
+  courses     Course[]
+
+  @@unique([institutionId, name])
+  @@map("departments")
+}
+
+model Student {
+  id             String   @id @default(uuid())
+  profileId      String?  @unique @map("profile_id")
+  institutionId  String   @map("institution_id")
+  departmentId   String   @map("department_id")
+  matricNumber   String   @map("matric_number") @db.VarChar(30)
+  fullName       String   @map("full_name") @db.VarChar(200)
+  programme      String?  @db.VarChar(200)
+  admissionYear  Int?     @map("admission_year")
+  graduationYear Int?     @map("graduation_year")
+  createdBy      String?  @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  profile     Profile?    @relation("StudentProfile", fields: [profileId], references: [id])
+  institution Institution @relation(fields: [institutionId], references: [id])
+  department  Department  @relation(fields: [departmentId], references: [id])
+  results     Result[]
+  documents   Document[]
+
+  @@unique([institutionId, matricNumber])
+  @@map("students")
+}
+
+model AcademicSession {
+  id            String       @id @default(uuid())
+  institutionId String       @map("institution_id")
+  label         String       @db.VarChar(20)
+  semester      SemesterType
+  isActive      Boolean      @default(false) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  institution Institution @relation(fields: [institutionId], references: [id])
+  results     Result[]
+
+  @@unique([institutionId, label, semester])
+  @@map("academic_sessions")
+}
+
+model Course {
+  id           String   @id @default(uuid())
+  departmentId String   @map("department_id")
+  code         String   @db.VarChar(20)
+  title        String   @db.VarChar(200)
+  creditUnits  Int      @map("credit_units")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  results    Result[]
+
+  @@unique([departmentId, code])
+  @@map("courses")
+}
+
+model Result {
+  id             String    @id @default(uuid())
+  studentId      String    @map("student_id")
+  sessionId      String    @map("session_id")
+  courseId       String    @map("course_id")
+  grade          String    @db.VarChar(4)
+  gradePoint     Decimal   @map("grade_point") @db.Decimal(3, 1)
+  isLocked       Boolean   @default(false) @map("is_locked")
+  lockedAt       DateTime? @map("locked_at")
+  isSuperseded   Boolean   @default(false) @map("is_superseded")
+  supersededById String?   @map("superseded_by")
+  correctionNote String?   @map("correction_note") @db.VarChar(500)
+  uploadedBy     String    @map("uploaded_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  student      Student         @relation(fields: [studentId], references: [id])
+  session      AcademicSession @relation(fields: [sessionId], references: [id])
+  course       Course          @relation(fields: [courseId], references: [id])
+  uploader     Profile         @relation(fields: [uploadedBy], references: [id])
+  supersededBy Result?         @relation("ResultSupersession", fields: [supersededById], references: [id])
+  supersedes   Result[]        @relation("ResultSupersession")
+
+  @@unique([studentId, sessionId, courseId])
+  @@map("results")
+}
+
+model Document {
+  id            String         @id @default(uuid())
+  studentId     String         @map("student_id")
+  institutionId String         @map("institution_id")
+  uploadedBy    String         @map("uploaded_by")
+  approvedBy    String?        @map("approved_by")
+  documentType  DocumentType   @map("document_type")
+  status        DocumentStatus @default(pending_approval)
+
+  filePath      String @map("file_path")
+  fileName      String @map("file_name") @db.VarChar(255)
+  fileSizeBytes Int    @map("file_size_bytes")
+  mimeType      String @map("mime_type") @db.VarChar(100)
+
+  sha256Hash String?   @map("sha256_hash") @db.Char(64)
+  signature  String?
+  signedAt   DateTime? @map("signed_at")
+
+  verificationToken String? @unique @map("verification_token") @db.Char(64)
+  qrCodeBase64      String? @map("qr_code_base64")
+
+  declaredDegreeClass    String? @map("declared_degree_class") @db.VarChar(50)
+  declaredProgramme      String? @map("declared_programme") @db.VarChar(200)
+  declaredGraduationYear Int?    @map("declared_graduation_year")
+
+  supersedes         String?   @map("supersedes")
+  supersededBy       String?   @map("superseded_by")
+  supersessionReason String?   @map("supersession_reason")
+  supersededAt       DateTime? @map("superseded_at")
+
+  revocationReason String?   @map("revocation_reason")
+  revokedAt        DateTime? @map("revoked_at")
+  revokedBy        String?   @map("revoked_by")
+
+  approvalNote String?   @map("approval_note")
+  rejectedAt   DateTime? @map("rejected_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  student          Student           @relation(fields: [studentId], references: [id])
+  institution      Institution       @relation(fields: [institutionId], references: [id])
+  uploader         Profile           @relation("UploadedBy", fields: [uploadedBy], references: [id])
+  approver         Profile?          @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  revoker          Profile?          @relation("RevokedBy", fields: [revokedBy], references: [id])
+  verificationLogs VerificationLog[]
+
+  @@map("documents")
+}
+
+model VerificationLog {
+  id            String             @id @default(uuid())
+  documentId    String?            @map("document_id")
+  tokenUsed     String?            @map("token_used") @db.Char(64)
+  verifierIp    String?            @map("verifier_ip")
+  verifierOrg   String?            @map("verifier_org") @db.VarChar(200)
+  method        String             @db.VarChar(10)
+  status        VerificationStatus
+  failureReason String?            @map("failure_reason")
+  verifiedAt    DateTime           @default(now()) @map("verified_at")
+
+  document Document? @relation(fields: [documentId], references: [id])
+
+  @@map("verification_logs")
+}
+
+model AuditLog {
+  id         String        @id @default(uuid())
+  actorId    String?       @map("actor_id")
+  actorRole  String?       @map("actor_role") @db.VarChar(20)
+  action     AuditAction
+  severity   AuditSeverity @default(info)
+  targetType String?       @map("target_type") @db.VarChar(80)
+  targetId   String?       @map("target_id")
+  ipAddress  String?       @map("ip_address")
+  metadata   Json?
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  actor Profile? @relation(fields: [actorId], references: [id])
+
+  @@map("audit_logs")
+}
