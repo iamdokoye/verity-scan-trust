@@ -79,6 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Verify any academic credential instantly with Votta." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Votta — Tamper-Evident Academic Records" },
+      { name: "twitter:description", content: "Verify any academic credential instantly with Votta." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dc02047c-6bb3-441e-b25c-cd60ebe318db/id-preview-4855e519--f6778746-07a2-404f-9d51-46a17bf64cb2.lovable.app-1778180209777.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dc02047c-6bb3-441e-b25c-cd60ebe318db/id-preview-4855e519--f6778746-07a2-404f-9d51-46a17bf64cb2.lovable.app-1778180209777.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
