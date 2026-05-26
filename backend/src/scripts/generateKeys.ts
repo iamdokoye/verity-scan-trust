@@ -1,6 +1,10 @@
-import { CryptoService } from '../services/crypto.service';
+import crypto from 'crypto';
 
-const { privateKey, publicKey } = CryptoService.generateKeyPair();
+const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+});
 
 console.log('\n=== INSTITUTION RSA KEY PAIR ===\n');
 console.log('Copy the following into your .env file (replace literal newlines with \\n):\n');

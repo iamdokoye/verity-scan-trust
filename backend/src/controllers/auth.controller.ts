@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
 import { auditService } from '../services/audit.service';
+import { AuthError } from '../utils/errors';
 import { sendSuccess } from '../utils/response';
 
 export const authController = {
@@ -14,10 +15,11 @@ export const authController = {
         severity: 'info',
         ipAddress: req.ip,
         metadata: { email },
-      });
-      sendSuccess(res, {
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
+	      });
+	      if (!data.session) throw new AuthError('Invalid credentials');
+	      sendSuccess(res, {
+	        accessToken: data.session.access_token,
+	        refreshToken: data.session.refresh_token,
         user: data.user,
       });
     } catch (err) {
@@ -25,11 +27,12 @@ export const authController = {
     }
   },
 
-  async refresh(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await authService.refresh(req.body.refreshToken);
-      sendSuccess(res, {
-        accessToken: data.session.access_token,
+	  async refresh(req: Request, res: Response, next: NextFunction) {
+	    try {
+	      const data = await authService.refresh(req.body.refreshToken);
+	      if (!data.session) throw new AuthError('Could not refresh');
+	      sendSuccess(res, {
+	        accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
       });
     } catch (err) {

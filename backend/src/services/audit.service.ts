@@ -24,7 +24,7 @@ export class AuditService {
           targetType: entry.targetType,
           targetId: entry.targetId,
           ipAddress: entry.ipAddress,
-          metadata: (entry.metadata ?? null) as Prisma.InputJsonValue | null,
+	          metadata: entry.metadata as Prisma.InputJsonValue | undefined,
         },
       });
     } catch (err) {

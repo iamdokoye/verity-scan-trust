@@ -23,7 +23,7 @@ export class TranscriptService {
     const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
     let page = pdf.addPage([595, 842]); // A4
-    const { width, height } = page.size;
+    const { width, height } = page.getSize();
     let y = height - 60;
 
     const drawText = (
