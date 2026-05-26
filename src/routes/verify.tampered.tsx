@@ -3,10 +3,22 @@ import { AlertTriangle } from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
 
 export const Route = createFileRoute("/verify/tampered")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    token: (s.token as string) || "",
+    status: (s.status as string) || "tampered",
+  }),
   component: Tampered,
 });
 
 function Tampered() {
+  const { token, status } = Route.useSearch();
+
+  const label = status === "invalid_signature" ? "Invalid Signature" : "Tampered";
+  const description =
+    status === "invalid_signature"
+      ? "The digital signature on this document could not be verified."
+      : "The document does not match the original record.";
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card px-4 py-4">
@@ -23,9 +35,7 @@ function Tampered() {
           <AlertTriangle className="h-9 w-9" strokeWidth={2.5} />
           <div>
             <div className="text-xl font-bold">Document Integrity Compromised</div>
-            <div className="text-sm text-destructive-foreground/90">
-              The document does not match the original record.
-            </div>
+            <div className="text-sm text-destructive-foreground/90">{description}</div>
           </div>
         </div>
       </div>
@@ -37,28 +47,22 @@ function Tampered() {
         </p>
 
         <div className="rounded-lg border border-border bg-card p-6">
-          <div className="flex flex-col gap-1 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Document Type</span>
-            <span className="text-sm font-medium text-foreground">Degree Certificate</span>
-          </div>
-          <div className="flex flex-col gap-1 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Verification Token</span>
-            <span className="font-mono text-sm text-foreground">VTA-7K3M-9P2Q-XR4N</span>
-          </div>
+          {token && (
+            <div className="flex flex-col gap-1 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Verification Token</span>
+              <span className="font-mono text-sm text-foreground">{token}</span>
+            </div>
+          )}
           <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
             <span className="inline-flex w-fit items-center rounded-full bg-destructive/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-destructive">
-              Tampered
+              {label}
             </span>
           </div>
         </div>
 
         <div className="mt-6 rounded-md border border-warning/40 bg-warning/15 p-4 text-sm text-foreground">
-          If you believe this is an error, contact{" "}
-          <a className="font-medium text-secondary hover:underline" href="mailto:registrar@unilag.edu.ng">
-            registrar@unilag.edu.ng
-          </a>
-          .
+          If you believe this is an error, contact the issuing institution directly to verify the document's authenticity.
         </div>
 
         <div className="mt-6 text-center">

@@ -172,4 +172,31 @@ export const documentsController = {
       next(err);
     }
   },
+
+  async listPending(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page     = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
+      const pageSize = Math.min(50, parseInt((req.query.pageSize as string) ?? '20', 10));
+
+      const [items, total] = await Promise.all([
+        prisma.document.findMany({
+          where:   { institutionId: req.user!.institutionId, status: 'pending_approval' },
+          orderBy: { createdAt: 'asc' },
+          skip:    (page - 1) * pageSize,
+          take:    pageSize,
+          include: {
+            student:  { select: { fullName: true, matricNumber: true } },
+            uploader: { select: { fullName: true, email: true } },
+          },
+        }),
+        prisma.document.count({
+          where: { institutionId: req.user!.institutionId, status: 'pending_approval' },
+        }),
+      ]);
+
+      sendSuccess(res, items, 200, { total, page, pageSize });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

@@ -60,4 +60,14 @@ router.patch(
 
 router.get('/:documentId/download', documentsController.getDownloadUrl);
 
+// Generate PDF transcript for a student and stream it back
+router.post(
+  '/students/:studentId/transcript',
+  requireRole('admin'),
+  documentsController.generateTranscript
+);
+
+// List all pending-approval documents for the institution (approval queue)
+router.get('/pending', requireRole('admin'), documentsController.listPending);
+
 export default router;

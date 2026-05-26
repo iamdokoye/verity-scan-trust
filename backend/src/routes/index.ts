@@ -9,6 +9,7 @@ import resultRoutes from './results.routes';
 import documentRoutes from './documents.routes';
 import verifyRoutes from './verify.routes';
 import auditRoutes from './audit.routes';
+import adminRoutes from './admin.routes';
 
 export const router = Router();
 
@@ -22,3 +23,4 @@ router.use('/results', resultRoutes);
 router.use('/documents', documentRoutes);
 router.use('/verify', verifyRoutes);
 router.use('/audit', auditRoutes);
+router.use('/admin', adminRoutes);

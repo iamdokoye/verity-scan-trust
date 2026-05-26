@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, type LucideIcon } from "lucide-react";
+import { ChevronDown, LogOut, type LucideIcon } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { Logo } from "./Logo";
 
 export type NavItem = { label: string; to: string; icon: LucideIcon };
@@ -9,15 +10,29 @@ export function PortalShell({
   subtitle,
   userName,
   userRole,
+  onLogout,
   children,
 }: {
   items: NavItem[];
   subtitle: string;
   userName: string;
   userRole: string;
+  onLogout?: () => void;
   children: React.ReactNode;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
   return (
     <div className="flex min-h-screen bg-muted/40">
       <aside className="hidden w-60 flex-col bg-sidebar text-sidebar-foreground md:flex">
@@ -59,20 +74,38 @@ export function PortalShell({
           <div className="hidden text-sm text-muted-foreground md:block">
             {subtitle === "Administration" ? "Administration Portal" : "Student Portal"}
           </div>
-          <button className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-muted">
-            <div className="text-right leading-tight">
-              <div className="text-sm font-medium">{userName}</div>
-              <div className="text-xs text-muted-foreground">{userRole}</div>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-              {userName
-                .split(" ")
-                .map((p) => p[0])
-                .slice(0, 2)
-                .join("")}
-            </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-muted"
+            >
+              <div className="text-right leading-tight">
+                <div className="text-sm font-medium">{userName}</div>
+                <div className="text-xs text-muted-foreground">{userRole}</div>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                {userName
+                  .split(/[\s@]/)
+                  .map((p) => p[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase()}
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+            {menuOpen && onLogout && (
+              <div className="absolute right-0 top-full mt-1 w-40 rounded-md border border-border bg-background shadow-md">
+                <button
+                  onClick={() => { setMenuOpen(false); onLogout(); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </header>
         <main className="flex-1 p-6 lg:p-8">{children}</main>
       </div>

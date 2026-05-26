@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { QrCode, Camera } from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import { INSTITUTION } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
@@ -18,8 +19,33 @@ export const Route = createFileRoute("/")({
   component: VerifyHome,
 });
 
+type VerifyStatus = "verified" | "tampered" | "invalid_signature" | "superseded" | "revoked" | "not_found";
+
+function statusToRoute(status: VerifyStatus): "/verify/result" | "/verify/tampered" | "/verify/not-found" {
+  if (status === "verified") return "/verify/result";
+  if (status === "tampered" || status === "invalid_signature") return "/verify/tampered";
+  return "/verify/not-found";
+}
+
 function VerifyHome() {
   const [token, setToken] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  async function handleVerify() {
+    const t = token.trim();
+    if (!t) return;
+    setLoading(true);
+    try {
+      const result = await api.get<{ status: VerifyStatus }>(`/verify?token=${encodeURIComponent(t)}`, { noAuth: true });
+      navigate({ to: statusToRoute(result.status), search: { token: t, status: result.status } });
+    } catch {
+      navigate({ to: "/verify/not-found", search: { token: t } });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
@@ -58,19 +84,13 @@ function VerifyHome() {
                 onChange={(e) => setToken(e.target.value)}
                 className="font-mono"
               />
-              <Button asChild className="mt-4 w-full" size="lg">
-                <Link
-                  to={
-                    token.trim().toUpperCase().startsWith("VTA-")
-                      ? "/verify/result"
-                      : token.trim() === ""
-                        ? "/verify/result"
-                        : "/verify/not-found"
-                  }
-                  search={{ token: token || "VTA-7K3M-9P2Q-XR4N" }}
-                >
-                  Verify
-                </Link>
+              <Button
+                className="mt-4 w-full"
+                size="lg"
+                onClick={handleVerify}
+                disabled={loading || !token.trim()}
+              >
+                {loading ? "Verifying…" : "Verify"}
               </Button>
               <div className="mt-3 text-center text-xs text-muted-foreground">
                 Try sample tokens:{" "}
