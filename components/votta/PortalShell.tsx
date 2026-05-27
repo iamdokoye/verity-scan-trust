@@ -76,7 +76,7 @@ export function PortalShell({
             <Logo subtitle={subtitle} />
           </div>
           <div className="hidden text-sm text-muted-foreground md:block">
-            {subtitle === "Administration" ? "Administration Portal" : "Student Portal"}
+            {subtitle} Portal
           </div>
           <div className="relative" ref={menuRef}>
             <button

@@ -11,7 +11,7 @@ export const studentsController = {
       const q = (req.query.q as string | undefined)?.trim();
       const items = await prisma.student.findMany({
         where: {
-          institutionId: req.user!.institutionId,
+          institutionId: req.user!.institutionId!,
           ...(q && {
             OR: [
               { fullName: { contains: q, mode: 'insensitive' } },
@@ -33,7 +33,7 @@ export const studentsController = {
     try {
       const user = req.user!;
       const student = await prisma.student.findFirst({
-        where: { id: req.params.id, institutionId: user.institutionId },
+        where: { id: req.params.id, institutionId: user.institutionId! },
         include: { department: true, institution: { select: { name: true, acronym: true } } },
       });
       if (!student) throw new NotFoundError('Student');
@@ -56,7 +56,7 @@ export const studentsController = {
       const student = await prisma.student.create({
         data: {
           ...req.body,
-          institutionId: req.user!.institutionId,
+          institutionId: req.user!.institutionId!,
           createdBy: req.user!.id,
         },
       });
@@ -77,7 +77,7 @@ export const studentsController = {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const existing = await prisma.student.findFirst({
-        where: { id: req.params.id, institutionId: req.user!.institutionId },
+        where: { id: req.params.id, institutionId: req.user!.institutionId! },
       });
       if (!existing) throw new NotFoundError('Student');
       const student = await prisma.student.update({

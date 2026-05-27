@@ -346,7 +346,6 @@ export class DocumentService {
           signedAt: new Date(),
           verificationToken: newToken,
           qrCodeBase64: newQR,
-          supersedes: originalDocumentId,
         },
       }),
     ]);

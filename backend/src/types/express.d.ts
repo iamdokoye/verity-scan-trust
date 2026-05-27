@@ -7,7 +7,7 @@ declare global {
         id: string;
         email: string;
         role: UserRole;
-        institutionId: string;
+        institutionId?: string; // undefined for super_admin
       };
     }
   }

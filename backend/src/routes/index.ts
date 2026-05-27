@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
 import institutionRoutes from './institution.routes';
+import superAdminRoutes from './superadmin.routes';
 import departmentRoutes from './departments.routes';
 import studentRoutes from './students.routes';
 import sessionRoutes from './sessions.routes';
@@ -24,3 +25,4 @@ router.use('/documents', documentRoutes);
 router.use('/verify', verifyRoutes);
 router.use('/audit', auditRoutes);
 router.use('/admin', adminRoutes);
+router.use('/super-admin', superAdminRoutes);

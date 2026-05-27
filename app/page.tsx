@@ -53,6 +53,26 @@ export default function VerifyHome() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* ── Navbar ── */}
+      <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+          <Logo />
+          <nav className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link href="/signup">
+              <Button size="sm">
+                Sign up
+              </Button>
+            </Link>
+          </nav>
+        </div>
+      </header>
+
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-3xl">
           <div className="mb-10 flex flex-col items-center text-center">

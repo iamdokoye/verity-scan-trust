@@ -14,7 +14,7 @@ export const auditController = {
       );
 
       const where = {
-        actor: { institutionId: req.user!.institutionId },
+        actor: { institutionId: req.user!.institutionId! },
         ...(action && { action: action as AuditAction }),
         ...(from || to
           ? {

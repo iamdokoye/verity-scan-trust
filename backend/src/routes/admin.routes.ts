@@ -23,6 +23,9 @@ router.use(requireAuth, requireRole('admin'));
  * Remove or gate behind an env flag in production.
  */
 router.patch('/tamper/:documentId', async (req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+    return res.status(404).json({ success: false, error: { message: 'Not found', code: 'NOT_FOUND' } });
+  }
   try {
     const document = await prisma.document.findFirst({
       where: {

@@ -167,7 +167,101 @@ export async function apiGetMe() {
   return api.get<{
     id: string;
     email: string;
-    role: string;
-    institutionId: string;
+    role: "super_admin" | "admin" | "student";
+    institutionId?: string;
   }>("/auth/me");
+}
+
+export type SignupPayload = {
+  email: string;
+  password: string;
+  fullName: string;
+  institutionId: string;
+};
+
+export async function apiSignup(payload: SignupPayload): Promise<{ message: string }> {
+  return api.post<{ message: string }>("/auth/signup", {
+    body: payload,
+    noAuth: true,
+  });
+}
+
+export type PublicInstitution = {
+  id: string;
+  name: string;
+  acronym: string;
+  state: string | null;
+};
+
+export async function apiListInstitutionsPublic(): Promise<PublicInstitution[]> {
+  return api.get<PublicInstitution[]>("/institution/list", { noAuth: true });
+}
+
+// ── Super-admin types ────────────────────────────────────────────────────────
+
+export type AuditEntry = {
+  id: string;
+  action: string;
+  severity: "info" | "warning" | "critical";
+  actorId: string | null;
+  actorRole: string | null;
+  targetType: string | null;
+  targetId: string | null;
+  ipAddress: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  actor: { email: string; fullName: string | null } | null;
+};
+
+export type PlatformStats = {
+  totalInstitutions: number;
+  totalStudents: number;
+  totalDocuments: number;
+  totalVerifications: number;
+  documentsByStatus: Record<string, number>;
+  recentAlerts: AuditEntry[];
+  recentActivity: AuditEntry[];
+};
+
+export type Institution = {
+  id: string;
+  name: string;
+  acronym: string;
+  state: string | null;
+  adminEmail: string;
+  publicKeyPem: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count: { students: number; documents: number };
+};
+
+export async function apiGetPlatformStats(): Promise<PlatformStats> {
+  return api.get<PlatformStats>("/super-admin/stats");
+}
+
+export async function apiListInstitutions(): Promise<Institution[]> {
+  return api.get<Institution[]>("/institution/all");
+}
+
+export async function apiCreateInstitution(body: {
+  name: string;
+  acronym: string;
+  state?: string;
+  adminEmail: string;
+}): Promise<Institution> {
+  return api.post<Institution>("/institution", { body });
+}
+
+export async function apiUpdateInstitution(
+  id: string,
+  body: Partial<{ name: string; acronym: string; state: string; adminEmail: string }>,
+): Promise<Institution> {
+  return api.patch<Institution>(`/institution/${id}`, { body });
+}
+
+export async function apiProvisionAdmin(
+  institutionId: string,
+  body: { email: string; fullName: string; password: string },
+): Promise<{ userId: string; email: string }> {
+  return api.post(`/institution/${institutionId}/admins`, { body });
 }

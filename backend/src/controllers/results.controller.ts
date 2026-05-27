@@ -11,7 +11,7 @@ export const resultsController = {
     try {
       const user = req.user!;
       const student = await prisma.student.findFirst({
-        where: { id: req.params.studentId, institutionId: user.institutionId },
+        where: { id: req.params.studentId, institutionId: user.institutionId! },
       });
       if (!student) throw new NotFoundError('Student');
       if (user.role === 'student' && student.profileId !== user.id) {
@@ -102,7 +102,7 @@ export const resultsController = {
         where: { id: req.params.id },
         include: { student: true },
       });
-      if (!result || result.student.institutionId !== req.user!.institutionId) {
+      if (!result || result.student.institutionId !== req.user!.institutionId!) {
         throw new NotFoundError('Result');
       }
       const updated = await prisma.result.update({

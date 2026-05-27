@@ -43,4 +43,34 @@ jobs:
           SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
           INSTITUTION_PRIVATE_KEY_PEM: ${{ secrets.INSTITUTION_PRIVATE_KEY_PEM }}
           INSTITUTION_PUBLIC_KEY_PEM: ${{ secrets.INSTITUTION_PUBLIC_KEY_PEM }}
-          FRONTEND_URL: http://localhost:3001
+          FRONTEND_URL: http://localhost:3000
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1

@@ -17,7 +17,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   if (state.status === "authenticated") {
-    const dest = state.user.role === "admin" ? "/admin" : "/student";
+    const { role } = state.user;
+    const dest =
+      role === "super_admin"
+        ? "/super-admin"
+        : role === "admin"
+          ? "/admin"
+          : "/student";
     router.replace(dest);
     return null;
   }
@@ -98,7 +104,13 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          <Link href="/" className="text-secondary hover:underline">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-secondary hover:underline">
+            Sign up as a student
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          <Link href="/" className="hover:underline">
             Back to verification portal
           </Link>
         </p>

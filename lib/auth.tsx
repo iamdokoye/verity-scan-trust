@@ -12,8 +12,8 @@ import { apiLogin, apiLogout, apiGetMe, tokenStore, apiRefresh } from "./api";
 export type AuthUser = {
   id: string;
   email: string;
-  role: "admin" | "student";
-  institutionId: string;
+  role: "super_admin" | "admin" | "student";
+  institutionId?: string; // undefined for super_admin
 };
 
 type AuthState =
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         user,
-        isAdmin: user?.role === "admin",
+        isAdmin: user?.role === "admin" || user?.role === "super_admin",
       }}
     >
       {children}

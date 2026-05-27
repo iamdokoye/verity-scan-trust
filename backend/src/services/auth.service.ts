@@ -14,6 +14,27 @@ export class AuthService {
     return data;
   }
 
+  async signup(
+    email: string,
+    password: string,
+    fullName: string,
+    institutionId: string,
+  ) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: 'student',
+          institution_id: institutionId,
+          full_name: fullName,
+        },
+      },
+    });
+    if (error || !data.user) throw new AuthError(error?.message ?? 'Signup failed');
+    return data;
+  }
+
   async logout(accessToken: string) {
     const { error } = await supabase.auth.admin.signOut(accessToken);
     if (error) throw new AuthError(error.message);

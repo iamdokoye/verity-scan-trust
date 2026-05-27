@@ -25,9 +25,14 @@ export async function requireAuth(
 
     const userId = payload.sub as string;
     const userRole = payload['user_role'] as string;
-    const institutionId = payload['institution_id'] as string;
+    const institutionId = payload['institution_id'] as string | undefined;
 
-    if (!userId || !userRole || !institutionId) {
+    if (!userId || !userRole) {
+      return sendError(res, 'Invalid token claims', 401, 'UNAUTHORIZED');
+    }
+
+    // super_admin has no institution affiliation — all other roles must have one
+    if (userRole !== 'super_admin' && !institutionId) {
       return sendError(res, 'Invalid token claims', 401, 'UNAUTHORIZED');
     }
 

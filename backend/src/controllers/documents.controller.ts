@@ -14,7 +14,7 @@ export const documentsController = {
 
       const document = await documentService.uploadDocument({
         studentId: req.params.studentId,
-        institutionId: req.user!.institutionId,
+        institutionId: req.user!.institutionId!,
         uploadedBy: req.user!.id,
         uploaderRole: req.user!.role,
         documentType: req.body.documentType as DocumentType,
@@ -46,7 +46,7 @@ export const documentsController = {
       }
 
       const documents = await prisma.document.findMany({
-        where: { studentId, institutionId: user.institutionId },
+        where: { studentId, institutionId: user.institutionId! },
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
@@ -78,7 +78,7 @@ export const documentsController = {
         documentId: req.params.documentId,
         approverId: req.user!.id,
         approverRole: req.user!.role,
-        approverInstitutionId: req.user!.institutionId,
+        approverInstitutionId: req.user!.institutionId!,
         approvalNote: req.body.approvalNote,
         ipAddress: req.ip,
       });
@@ -94,7 +94,7 @@ export const documentsController = {
         documentId: req.params.documentId,
         rejectorId: req.user!.id,
         rejectorRole: req.user!.role,
-        rejectorInstitutionId: req.user!.institutionId,
+        rejectorInstitutionId: req.user!.institutionId!,
         rejectionReason: req.body.rejectionReason,
         ipAddress: req.ip,
       });
@@ -113,7 +113,7 @@ export const documentsController = {
         supersessionReason: req.body.supersessionReason,
         requestorId: req.user!.id,
         requestorRole: req.user!.role,
-        institutionId: req.user!.institutionId,
+        institutionId: req.user!.institutionId!,
         ipAddress: req.ip,
       });
       sendSuccess(res, result);
@@ -128,7 +128,7 @@ export const documentsController = {
         documentId: req.params.documentId,
         revokerId: req.user!.id,
         revokerRole: req.user!.role,
-        institutionId: req.user!.institutionId,
+        institutionId: req.user!.institutionId!,
         revocationReason: req.body.revocationReason,
         ipAddress: req.ip,
       });
@@ -141,7 +141,7 @@ export const documentsController = {
   async getDownloadUrl(req: Request, res: Response, next: NextFunction) {
     try {
       const document = await prisma.document.findFirst({
-        where: { id: req.params.documentId, institutionId: req.user!.institutionId },
+        where: { id: req.params.documentId, institutionId: req.user!.institutionId! },
       });
       if (!document) throw new NotFoundError('Document');
 
@@ -180,7 +180,7 @@ export const documentsController = {
 
       const [items, total] = await Promise.all([
         prisma.document.findMany({
-          where:   { institutionId: req.user!.institutionId, status: 'pending_approval' },
+          where:   { institutionId: req.user!.institutionId!, status: 'pending_approval' },
           orderBy: { createdAt: 'asc' },
           skip:    (page - 1) * pageSize,
           take:    pageSize,
@@ -190,7 +190,7 @@ export const documentsController = {
           },
         }),
         prisma.document.count({
-          where: { institutionId: req.user!.institutionId, status: 'pending_approval' },
+          where: { institutionId: req.user!.institutionId!, status: 'pending_approval' },
         }),
       ]);
 
