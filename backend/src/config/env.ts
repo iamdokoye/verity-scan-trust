@@ -12,7 +12,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   INSTITUTION_PRIVATE_KEY_PEM: z.string().min(1),
   INSTITUTION_PUBLIC_KEY_PEM: z.string().min(1),
-  FRONTEND_URL: z.string().url(),
+  // Comma-separated list of allowed frontend origins
+  // e.g. "https://www.votta.xyz,https://votta.xyz"
+  FRONTEND_URL: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

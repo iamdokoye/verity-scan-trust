@@ -14,10 +14,26 @@ app.set('trust proxy', 1);
 // Security headers
 app.use(helmet());
 
-// CORS — only allow your frontend origin
+// CORS — parse comma-separated FRONTEND_URL into an allowed origins list
+const allowedOrigins = env.FRONTEND_URL.split(',')
+  .map((u) => u.trim())
+  .filter(Boolean);
+
+// Always allow localhost in development
+if (env.NODE_ENV === 'development') {
+  allowedOrigins.push('http://localhost:3000', 'http://localhost:3001');
+}
+
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      // Allow server-to-server requests (no origin) and listed origins
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     credentials: true,
   })
 );
