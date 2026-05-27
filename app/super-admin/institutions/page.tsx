@@ -456,7 +456,7 @@ export default function InstitutionsPage() {
               </div>
             ))}
           </div>
-        ) : institutions.length === 0 ? (
+        ) : institutions.length === 0 && !error ? (
           <div className="flex flex-col items-center py-20 text-center">
             <Building2 className="mb-3 h-8 w-8 text-muted-foreground/40" />
             <p className="font-medium text-foreground">
@@ -470,7 +470,7 @@ export default function InstitutionsPage() {
               Add institution
             </Button>
           </div>
-        ) : (
+        ) : institutions.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -591,7 +591,7 @@ export default function InstitutionsPage() {
               ))}
             </TableBody>
           </Table>
-        )}
+        ) : null}
       </div>
 
       {/* Dialogs */}
