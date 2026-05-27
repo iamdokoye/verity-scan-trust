@@ -49,4 +49,25 @@ router.post(
   institutionController.provisionAdmin
 );
 
+router.patch(
+  '/:id/suspend',
+  requireAuth,
+  requireRole('super_admin'),
+  institutionController.suspend
+);
+
+router.patch(
+  '/:id/reactivate',
+  requireAuth,
+  requireRole('super_admin'),
+  institutionController.reactivate
+);
+
+router.delete(
+  '/:id',
+  requireAuth,
+  requireRole('super_admin'),
+  institutionController.deleteInstitution
+);
+
 export default router;

@@ -230,6 +230,7 @@ export type Institution = {
   state: string | null;
   adminEmail: string;
   publicKeyPem: string | null;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   _count: { students: number; documents: number };
@@ -261,7 +262,19 @@ export async function apiUpdateInstitution(
 
 export async function apiProvisionAdmin(
   institutionId: string,
-  body: { email: string; fullName: string; password: string },
+  body: { email: string; fullName: string },
 ): Promise<{ userId: string; email: string }> {
   return api.post(`/institution/${institutionId}/admins`, { body });
+}
+
+export async function apiSuspendInstitution(id: string): Promise<Institution> {
+  return api.patch<Institution>(`/institution/${id}/suspend`);
+}
+
+export async function apiReactivateInstitution(id: string): Promise<Institution> {
+  return api.patch<Institution>(`/institution/${id}/reactivate`);
+}
+
+export async function apiDeleteInstitution(id: string): Promise<void> {
+  return api.delete(`/institution/${id}`);
 }

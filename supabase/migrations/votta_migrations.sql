@@ -72,6 +72,9 @@ CREATE TYPE public.audit_action AS ENUM (
   'CROSS_STUDENT_DUPLICATE',
   'INSTITUTION_CREATED',
   'INSTITUTION_UPDATED',
+  'INSTITUTION_SUSPENDED',
+  'INSTITUTION_REACTIVATED',
+  'INSTITUTION_DELETED',
   'ADMIN_PROVISIONED'
 );
 
@@ -92,6 +95,7 @@ CREATE TABLE public.institutions (
   state         VARCHAR(80),
   admin_email   VARCHAR(200)  NOT NULL UNIQUE,
   public_key_pem TEXT,
+  is_active     BOOLEAN       NOT NULL DEFAULT true,
   created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );

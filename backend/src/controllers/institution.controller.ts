@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
-import { sendSuccess } from '../utils/response';
+import { sendSuccess, sendError } from '../utils/response';
 import { NotFoundError } from '../utils/errors';
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
@@ -12,6 +12,7 @@ export const institutionController = {
   async listPublic(_req: Request, res: Response, next: NextFunction) {
     try {
       const institutions = await prisma.institution.findMany({
+        where: { isActive: true },
         select: { id: true, name: true, acronym: true, state: true },
         orderBy: { name: 'asc' },
       });
@@ -78,6 +79,7 @@ export const institutionController = {
     try {
       const institution = await prisma.institution.create({
         data: req.body,
+        include: { _count: { select: { students: true, documents: true } } },
       });
       await auditService.log({
         actorId: req.user!.id,
@@ -106,6 +108,7 @@ export const institutionController = {
       const institution = await prisma.institution.update({
         where: { id: req.params.id },
         data: req.body,
+        include: { _count: { select: { students: true, documents: true } } },
       });
       await auditService.log({
         actorId: req.user!.id,
@@ -127,10 +130,9 @@ export const institutionController = {
   async provisionAdmin(req: Request, res: Response, next: NextFunction) {
     try {
       const { id: institutionId } = req.params;
-      const { email, fullName, password } = req.body as {
+      const { email, fullName } = req.body as {
         email: string;
         fullName: string;
-        password: string;
       };
 
       const institution = await prisma.institution.findUnique({
@@ -138,12 +140,15 @@ export const institutionController = {
       });
       if (!institution) throw new NotFoundError('Institution');
 
-      // Create auth user — the handle_new_user trigger auto-creates the profile
-      const { data, error } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
+      // Build the redirect URL from the first allowed frontend origin
+      const frontendOrigin = env.FRONTEND_URL.split(',')[0].trim();
+      const redirectTo = `${frontendOrigin}/auth/accept-invite`;
+
+      // Send email invite — the handle_new_user trigger auto-creates the profile
+      // on user row creation (which happens immediately on inviteUserByEmail)
+      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+        redirectTo,
+        data: {
           role: 'admin',
           institution_id: institutionId,
           full_name: fullName,
@@ -167,6 +172,98 @@ export const institutionController = {
       });
 
       sendSuccess(res, { userId: data.user.id, email: data.user.email }, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ── Super admin: suspend institution ─────────────────────────────────────
+
+  async suspend(req: Request, res: Response, next: NextFunction) {
+    try {
+      const existing = await prisma.institution.findUnique({
+        where: { id: req.params.id },
+      });
+      if (!existing) throw new NotFoundError('Institution');
+
+      const institution = await prisma.institution.update({
+        where: { id: req.params.id },
+        data: { isActive: false },
+      });
+      await auditService.log({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'INSTITUTION_SUSPENDED',
+        targetType: 'Institution',
+        targetId: institution.id,
+        ipAddress: req.ip,
+        metadata: { name: institution.name },
+      });
+      sendSuccess(res, institution);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ── Super admin: reactivate institution ──────────────────────────────────
+
+  async reactivate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const existing = await prisma.institution.findUnique({
+        where: { id: req.params.id },
+      });
+      if (!existing) throw new NotFoundError('Institution');
+
+      const institution = await prisma.institution.update({
+        where: { id: req.params.id },
+        data: { isActive: true },
+      });
+      await auditService.log({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'INSTITUTION_REACTIVATED',
+        targetType: 'Institution',
+        targetId: institution.id,
+        ipAddress: req.ip,
+        metadata: { name: institution.name },
+      });
+      sendSuccess(res, institution);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ── Super admin: delete institution (only if empty) ───────────────────────
+
+  async deleteInstitution(req: Request, res: Response, next: NextFunction) {
+    try {
+      const existing = await prisma.institution.findUnique({
+        where: { id: req.params.id },
+        include: { _count: { select: { students: true, documents: true } } },
+      });
+      if (!existing) throw new NotFoundError('Institution');
+
+      if (existing._count.students > 0 || existing._count.documents > 0) {
+        return sendError(
+          res,
+          'Cannot delete an institution that has students or documents. Suspend it instead.',
+          409,
+          'INSTITUTION_NOT_EMPTY',
+        );
+      }
+
+      await prisma.institution.delete({ where: { id: req.params.id } });
+
+      await auditService.log({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'INSTITUTION_DELETED',
+        targetType: 'Institution',
+        targetId: req.params.id,
+        ipAddress: req.ip,
+        metadata: { name: existing.name, acronym: existing.acronym },
+      });
+      sendSuccess(res, { deleted: true });
     } catch (err) {
       next(err);
     }

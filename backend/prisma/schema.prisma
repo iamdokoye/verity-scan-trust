@@ -75,6 +75,9 @@ enum AuditAction {
   CROSS_STUDENT_DUPLICATE
   INSTITUTION_CREATED
   INSTITUTION_UPDATED
+  INSTITUTION_SUSPENDED
+  INSTITUTION_REACTIVATED
+  INSTITUTION_DELETED
   ADMIN_PROVISIONED
 
   @@map("audit_action")
@@ -95,6 +98,7 @@ model Institution {
   state        String?  @db.VarChar(80)
   adminEmail   String   @unique @map("admin_email") @db.VarChar(200)
   publicKeyPem String?  @map("public_key_pem")
+  isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

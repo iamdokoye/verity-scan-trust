@@ -12,5 +12,5 @@ export const updateInstitutionSchema = createInstitutionSchema.partial();
 export const provisionAdminSchema = z.object({
   email: z.string().email().max(200),
   fullName: z.string().min(2).max(200),
-  password: z.string().min(8),
+  // no password — we send a Supabase email invite; user sets their own password
 });
