@@ -21,9 +21,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -135,6 +136,11 @@ function InstitutionDialog({
           <DialogTitle>
             {isEdit ? "Edit institution" : "Create institution"}
           </DialogTitle>
+          <DialogDescription>
+            {isEdit
+              ? "Update the institution details shown across the platform."
+              : "Add an institution that can issue and verify credentials."}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div>
@@ -249,6 +255,9 @@ function ProvisionAdminDialog({
           <DialogTitle className="truncate">
             Add admin — {institution?.name}
           </DialogTitle>
+          <DialogDescription>
+            Generate an invite link for an institution administrator.
+          </DialogDescription>
         </DialogHeader>
 
         {inviteUrl ? (
@@ -638,6 +647,9 @@ export default function InstitutionsPage() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-destructive">Delete institution?</DialogTitle>
+            <DialogDescription>
+              Permanently remove this institution if it has no dependent records.
+            </DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             This will permanently remove{" "}

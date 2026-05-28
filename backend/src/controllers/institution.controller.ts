@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
-import { NotFoundError } from '../utils/errors';
+import { AppError, ConflictError, NotFoundError } from '../utils/errors';
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
 import { auditService } from '../services/audit.service';
@@ -162,7 +162,30 @@ export const institutionController = {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        const status = error.status ?? 400;
+        if (status === 422 || status === 409 || error.message.toLowerCase().includes('already')) {
+          throw new ConflictError(error.message);
+        }
+        throw new AppError(error.message, status, 'SUPABASE_INVITE_ERROR');
+      }
+
+      await prisma.profile.upsert({
+        where: { id: data.user.id },
+        update: {
+          role: 'admin',
+          institutionId,
+          fullName,
+          email,
+        },
+        create: {
+          id: data.user.id,
+          role: 'admin',
+          institutionId,
+          fullName,
+          email,
+        },
+      });
 
       await auditService.log({
         actorId: req.user!.id,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase-client";
+import { getSupabaseBrowser } from "@/lib/supabase-client";
 import { apiLogin } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,15 @@ function AcceptInviteInner() {
   // Exchange the invite token as soon as the page loads
   useEffect(() => {
     async function verifyInvite() {
+      let supabaseBrowser: ReturnType<typeof getSupabaseBrowser>;
+      try {
+        supabaseBrowser = getSupabaseBrowser();
+      } catch (error) {
+        setPageError(error instanceof Error ? error.message : "Invite flow is not configured.");
+        setStep("error");
+        return;
+      }
+
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
 
@@ -122,6 +131,7 @@ function AcceptInviteInner() {
     }
     setLoading(true);
     try {
+      const supabaseBrowser = getSupabaseBrowser();
       // 1. Update password in Supabase
       const { error: updateError } = await supabaseBrowser.auth.updateUser({
         password,
