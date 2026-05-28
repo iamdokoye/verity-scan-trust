@@ -96,7 +96,7 @@ model Institution {
   name         String   @db.VarChar(200)
   acronym      String   @db.VarChar(20)
   state        String?  @db.VarChar(80)
-  adminEmail   String   @unique @map("admin_email") @db.VarChar(200)
+  adminEmail   String?  @unique @map("admin_email") @db.VarChar(200)
   publicKeyPem String?  @map("public_key_pem")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")

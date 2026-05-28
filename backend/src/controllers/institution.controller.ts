@@ -144,14 +144,21 @@ export const institutionController = {
       const frontendOrigin = env.FRONTEND_URL.split(',')[0].trim();
       const redirectTo = `${frontendOrigin}/auth/accept-invite`;
 
-      // Send email invite — the handle_new_user trigger auto-creates the profile
-      // on user row creation (which happens immediately on inviteUserByEmail)
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo,
-        data: {
-          role: 'admin',
-          institution_id: institutionId,
-          full_name: fullName,
+      // Use generateLink (type: 'invite') instead of inviteUserByEmail so we
+      // get the invite URL back directly — this avoids relying on Supabase's
+      // built-in mailer (rate-limited, poor deliverability).  The super admin
+      // can copy the link and share it via any channel.
+      // The handle_new_user trigger auto-creates the profile on user creation.
+      const { data, error } = await supabase.auth.admin.generateLink({
+        type: 'invite',
+        email,
+        options: {
+          redirectTo,
+          data: {
+            role: 'admin',
+            institution_id: institutionId,
+            full_name: fullName,
+          },
         },
       });
 
@@ -171,7 +178,11 @@ export const institutionController = {
         },
       });
 
-      sendSuccess(res, { userId: data.user.id, email: data.user.email }, 201);
+      sendSuccess(res, {
+        userId: data.user.id,
+        email: data.user.email,
+        inviteUrl: data.properties.action_link,
+      }, 201);
     } catch (err) {
       next(err);
     }

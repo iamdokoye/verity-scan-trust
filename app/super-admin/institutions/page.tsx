@@ -11,6 +11,8 @@ import {
   PauseCircle,
   PlayCircle,
   Trash2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +67,6 @@ type InstitutionForm = {
   name: string;
   acronym: string;
   state: string;
-  adminEmail: string;
 };
 
 function InstitutionDialog({
@@ -84,7 +85,6 @@ function InstitutionDialog({
     name: "",
     acronym: "",
     state: "",
-    adminEmail: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,10 +95,9 @@ function InstitutionDialog({
         name: editing.name,
         acronym: editing.acronym,
         state: editing.state ?? "",
-        adminEmail: editing.adminEmail,
       });
     } else {
-      setForm({ name: "", acronym: "", state: "", adminEmail: "" });
+      setForm({ name: "", acronym: "", state: "" });
     }
     setError(null);
     setLoading(false);
@@ -172,18 +171,6 @@ function InstitutionDialog({
               />
             </div>
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-foreground">
-              Admin email <span className="text-destructive">*</span>
-            </label>
-            <Input
-              required
-              type="email"
-              placeholder="admin@unilag.edu.ng"
-              value={form.adminEmail}
-              onChange={field("adminEmail")}
-            />
-          </div>
           {error && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
@@ -215,13 +202,15 @@ function ProvisionAdminDialog({
   const [form, setForm] = useState({ email: "", fullName: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!institution) {
       setForm({ email: "", fullName: "" });
       setError(null);
-      setSuccess(false);
+      setInviteUrl(null);
+      setCopied(false);
       setLoading(false);
     }
   }, [institution]);
@@ -237,13 +226,20 @@ function ProvisionAdminDialog({
     setError(null);
     setLoading(true);
     try {
-      await apiProvisionAdmin(institution.id, form);
-      setSuccess(true);
+      const result = await apiProvisionAdmin(institution.id, form);
+      setInviteUrl(result.inviteUrl);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to send invite.");
+      setError(err instanceof Error ? err.message : "Failed to generate invite.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCopy() {
+    if (!inviteUrl) return;
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -255,24 +251,50 @@ function ProvisionAdminDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {success ? (
-          <div className="py-6 text-center">
-            <div className="mb-3 text-3xl">✉️</div>
-            <p className="font-medium text-foreground">Invite sent!</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              An invitation email has been sent to{" "}
-              <strong>{form.email}</strong>. They'll click the link to set
-              their password and activate their account.
+        {inviteUrl ? (
+          <div className="space-y-4 py-2">
+            <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+              ✅ Invite link generated for <strong>{form.email}</strong>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Share this link with the admin. It expires after 24 hours and
+              will take them to a page where they set their own password.
             </p>
-            <Button className="mt-5 w-full" onClick={onClose}>
-              Done
-            </Button>
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted p-2">
+              <p className="flex-1 truncate text-xs text-muted-foreground">
+                {inviteUrl}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0"
+                onClick={handleCopy}
+              >
+                {copied ? (
+                  <>
+                    <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-1.5 h-3.5 w-3.5" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+            <DialogFooter>
+              <Button className="w-full" onClick={onClose}>
+                Done
+              </Button>
+            </DialogFooter>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <p className="text-xs text-muted-foreground">
-              An invitation email will be sent to the address below. The admin
-              will set their own password when they accept the invite.
+              An invite link will be generated that you can share with the
+              admin. They'll set their own password when they open it.
             </p>
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">
@@ -307,7 +329,7 @@ function ProvisionAdminDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Sending…" : "Send invite"}
+                {loading ? "Generating…" : "Generate invite link"}
               </Button>
             </DialogFooter>
           </form>
@@ -495,9 +517,11 @@ export default function InstitutionsPage() {
                         <p className="truncate font-medium text-foreground">
                           {inst.name}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {inst.adminEmail}
-                        </p>
+                        {inst.adminEmail && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {inst.adminEmail}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </TableCell>

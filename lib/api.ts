@@ -228,7 +228,7 @@ export type Institution = {
   name: string;
   acronym: string;
   state: string | null;
-  adminEmail: string;
+  adminEmail: string | null;
   publicKeyPem: string | null;
   isActive: boolean;
   createdAt: string;
@@ -248,14 +248,13 @@ export async function apiCreateInstitution(body: {
   name: string;
   acronym: string;
   state?: string;
-  adminEmail: string;
 }): Promise<Institution> {
   return api.post<Institution>("/institution", { body });
 }
 
 export async function apiUpdateInstitution(
   id: string,
-  body: Partial<{ name: string; acronym: string; state: string; adminEmail: string }>,
+  body: Partial<{ name: string; acronym: string; state: string }>,
 ): Promise<Institution> {
   return api.patch<Institution>(`/institution/${id}`, { body });
 }
@@ -263,7 +262,7 @@ export async function apiUpdateInstitution(
 export async function apiProvisionAdmin(
   institutionId: string,
   body: { email: string; fullName: string },
-): Promise<{ userId: string; email: string }> {
+): Promise<{ userId: string; email: string; inviteUrl: string }> {
   return api.post(`/institution/${institutionId}/admins`, { body });
 }
 
