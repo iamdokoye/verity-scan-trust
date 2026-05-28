@@ -286,7 +286,32 @@ export const institutionController = {
         );
       }
 
-      await prisma.institution.delete({ where: { id: req.params.id } });
+      // Clean up FK-constrained children in dependency order inside a transaction
+      await prisma.$transaction(async (tx) => {
+        // 1. Courses reference departments — delete courses first
+        await tx.course.deleteMany({
+          where: { department: { institutionId: req.params.id } },
+        });
+
+        // 2. Departments
+        await tx.department.deleteMany({
+          where: { institutionId: req.params.id },
+        });
+
+        // 3. Academic sessions (results depend on sessions, but students = 0 so none exist)
+        await tx.academicSession.deleteMany({
+          where: { institutionId: req.params.id },
+        });
+
+        // 4. Profiles — institutionId is nullable, disassociate rather than delete
+        await tx.profile.updateMany({
+          where: { institutionId: req.params.id },
+          data: { institutionId: null },
+        });
+
+        // 5. Delete the institution itself
+        await tx.institution.delete({ where: { id: req.params.id } });
+      });
 
       await auditService.log({
         actorId: req.user!.id,
