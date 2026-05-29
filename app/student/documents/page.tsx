@@ -14,7 +14,7 @@ import {
 const VERIFY_BASE =
   (typeof window !== "undefined"
     ? window.location.origin
-    : process.env.NEXT_PUBLIC_APP_URL ?? "https://votta.xyz") + "/v/";
+    : process.env.NEXT_PUBLIC_APP_URL ?? "https://votta.xyz") + "/verify?token=";
 
 const FILTERS = ["All", "Certificates", "Transcripts", "Other"] as const;
 

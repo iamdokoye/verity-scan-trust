@@ -24,5 +24,6 @@ router.use('/results', resultRoutes);
 router.use('/documents', documentRoutes);
 router.use('/verify', verifyRoutes);
 router.use('/audit', auditRoutes);
+router.use('/audit-logs', auditRoutes);
 router.use('/admin', adminRoutes);
 router.use('/super-admin', superAdminRoutes);

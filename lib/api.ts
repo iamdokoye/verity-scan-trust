@@ -210,7 +210,14 @@ export type AuditEntry = {
   ipAddress: string | null;
   metadata: Record<string, unknown> | null;
   createdAt: string;
-  actor: { email: string; fullName: string | null } | null;
+  actor: { email: string; fullName: string | null; role?: string } | null;
+};
+
+export type PaginatedAuditEntries = {
+  items: AuditEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 export type PlatformStats = {
@@ -238,6 +245,47 @@ export type Institution = {
 
 export async function apiGetPlatformStats(): Promise<PlatformStats> {
   return api.get<PlatformStats>("/super-admin/stats");
+}
+
+export async function apiListAuditLogs(params: {
+  page?: number;
+  pageSize?: number;
+  action?: string;
+  from?: string;
+  to?: string;
+  q?: string;
+} = {}): Promise<PaginatedAuditEntries> {
+  const query = new URLSearchParams();
+  query.set("page", String(params.page ?? 1));
+  query.set("pageSize", String(params.pageSize ?? 50));
+  if (params.action) query.set("action", params.action);
+  if (params.from) query.set("from", params.from);
+  if (params.to) query.set("to", params.to);
+  if (params.q) query.set("q", params.q);
+
+  const token = tokenStore.get();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}/audit-logs?${query.toString()}`, {
+    method: "GET",
+    headers,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      json?.error?.code,
+      json?.error?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return {
+    items: (json.data as AuditEntry[]) ?? [],
+    total: (json.meta?.total as number) ?? 0,
+    page: (json.meta?.page as number) ?? params.page ?? 1,
+    pageSize: (json.meta?.pageSize as number) ?? params.pageSize ?? 50,
+  };
 }
 
 export async function apiListInstitutions(): Promise<Institution[]> {

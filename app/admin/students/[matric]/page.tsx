@@ -13,12 +13,14 @@ import { Button } from "@/components/ui/button";
 import {
   apiGetStudent,
   apiGetStudentDocuments,
+  apiGetStudentResults,
   apiGetDocumentDownloadUrl,
+  type AcademicSummary,
   type StudentDetail,
   type VottaDocument,
 } from "@/lib/api";
 
-const TABS = ["Overview", "Documents"] as const;
+const TABS = ["Overview", "Results", "Documents"] as const;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,9 +81,12 @@ export default function StudentProfile({
 
   const [docs, setDocs] = useState<VottaDocument[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [results, setResults] = useState<AcademicSummary | null>(null);
+  const [loadingResults, setLoadingResults] = useState(false);
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [expandedHash, setExpandedHash] = useState<string | null>(null);
+  const [expandedSession, setExpandedSession] = useState<Record<number, boolean>>({ 0: true });
 
   useEffect(() => {
     async function load() {
@@ -107,6 +112,15 @@ export default function StudentProfile({
       .then(setDocs)
       .catch(() => setDocs([]))
       .finally(() => setLoadingDocs(false));
+  }, [tab, student, studentId]);
+
+  useEffect(() => {
+    if (tab !== "Results" || !student) return;
+    setLoadingResults(true);
+    apiGetStudentResults(studentId)
+      .then(setResults)
+      .catch(() => setResults(null))
+      .finally(() => setLoadingResults(false));
   }, [tab, student, studentId]);
 
   async function handleDownload(doc: VottaDocument) {
@@ -234,6 +248,106 @@ export default function StudentProfile({
         </div>
       )}
 
+      {/* Results */}
+      {tab === "Results" && (
+        <div>
+          {loadingResults ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : !results || results.sessions.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="text-base font-medium text-foreground">
+                No results recorded yet
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Enter results from the Results page.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {results.sessions.map((session, index) => {
+                const isOpen = !!expandedSession[index];
+                return (
+                  <div
+                    key={`${session.sessionLabel}-${session.semester}`}
+                    className="overflow-hidden rounded-lg border border-border bg-card"
+                  >
+                    <button
+                      onClick={() =>
+                        setExpandedSession((current) => ({
+                          ...current,
+                          [index]: !isOpen,
+                        }))
+                      }
+                      className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-muted/40"
+                    >
+                      <span className="text-sm font-semibold text-foreground">
+                        {session.sessionLabel} - {session.semester} semester
+                      </span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground">
+                          GPA
+                        </span>
+                        <span className="text-base font-semibold text-primary">
+                          {session.gpa.toFixed(2)}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 text-muted-foreground transition-transform ${
+                            isOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-border">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+                            <tr>
+                              <th className="px-5 py-2 text-left font-medium">Code</th>
+                              <th className="px-5 py-2 text-left font-medium">Title</th>
+                              <th className="px-5 py-2 text-center font-medium">Units</th>
+                              <th className="px-5 py-2 text-center font-medium">Grade</th>
+                              <th className="px-5 py-2 text-center font-medium">Point</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {session.results.map((result, resultIndex) => (
+                              <tr
+                                key={result.id}
+                                className={
+                                  resultIndex % 2 === 0 ? "bg-background" : "bg-muted/30"
+                                }
+                              >
+                                <td className="px-5 py-2.5 font-mono text-foreground">
+                                  {result.course.code}
+                                </td>
+                                <td className="px-5 py-2.5 text-foreground">
+                                  {result.course.title}
+                                </td>
+                                <td className="px-5 py-2.5 text-center text-foreground">
+                                  {result.course.creditUnits}
+                                </td>
+                                <td className="px-5 py-2.5 text-center font-semibold text-foreground">
+                                  {result.grade}
+                                </td>
+                                <td className="px-5 py-2.5 text-center text-foreground">
+                                  {result.gradePoint}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Documents */}
       {tab === "Documents" && (
         <div>
@@ -329,11 +443,6 @@ export default function StudentProfile({
           )}
         </div>
       )}
-
-      {/* Suppress unused import warning */}
-      <span className="hidden">
-        <ChevronDown className="h-0 w-0" />
-      </span>
     </div>
   );
 }

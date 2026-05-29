@@ -18,6 +18,11 @@ type VerifyStatus =
   | "revoked"
   | "not_found";
 
+type VerifyResponse = {
+  status: VerifyStatus;
+  reason?: string | null;
+};
+
 function statusToPath(
   status: VerifyStatus
 ): "/verify/result" | "/verify/tampered" | "/verify/not-found" {
@@ -31,6 +36,7 @@ export function NotFoundContent() {
   const searchParams = useSearchParams();
   const initialToken = searchParams.get("token") ?? "";
   const status = searchParams.get("status") ?? "not_found";
+  const reason = searchParams.get("reason");
   const [value, setValue] = useState(initialToken);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -40,12 +46,15 @@ export function NotFoundContent() {
     if (!t) return;
     setLoading(true);
     try {
-      const result = await api.get<{ status: VerifyStatus }>(
+      const result = await api.get<VerifyResponse>(
         `/verify?token=${encodeURIComponent(t)}`,
         { noAuth: true }
       );
+      const reasonParam = result.reason
+        ? `&reason=${encodeURIComponent(result.reason)}`
+        : "";
       router.push(
-        `${statusToPath(result.status)}?token=${encodeURIComponent(t)}&status=${result.status}`
+        `${statusToPath(result.status)}?token=${encodeURIComponent(t)}&status=${result.status}${reasonParam}`
       );
     } catch {
       router.push(`/verify/not-found?token=${encodeURIComponent(t)}`);
@@ -66,7 +75,7 @@ export function NotFoundContent() {
   const description = isRevoked
     ? "This document has been revoked by the issuing institution. Do not accept it."
     : isSuperseded
-      ? "This document has been superseded by a corrected version. Please request the updated document."
+      ? reason || "This document has been superseded by a corrected version. Please request the updated document."
       : "The token you entered does not match any document in our system. Please check the token and try again.";
 
   return (

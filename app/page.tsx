@@ -16,7 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
-import { INSTITUTION } from "@/lib/mock-data";
 
 type VerifyStatus =
   | "verified"
@@ -25,6 +24,11 @@ type VerifyStatus =
   | "superseded"
   | "revoked"
   | "not_found";
+
+type VerifyResponse = {
+  status: VerifyStatus;
+  reason?: string | null;
+};
 
 function statusToPath(
   status: VerifyStatus
@@ -66,12 +70,15 @@ export default function VerifyHome() {
     if (!t) return;
     setLoading(true);
     try {
-      const result = await api.get<{ status: VerifyStatus }>(
+      const result = await api.get<VerifyResponse>(
         `/verify?token=${encodeURIComponent(t)}`,
         { noAuth: true }
       );
+      const reason = result.reason
+        ? `&reason=${encodeURIComponent(result.reason)}`
+        : "";
       router.push(
-        `${statusToPath(result.status)}?token=${encodeURIComponent(t)}&status=${result.status}`
+        `${statusToPath(result.status)}?token=${encodeURIComponent(t)}&status=${result.status}${reason}`
       );
     } catch {
       router.push(`/verify/not-found?token=${encodeURIComponent(t)}`);
@@ -272,7 +279,7 @@ export default function VerifyHome() {
         </div>
       </main>
       <footer className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground">
-        {INSTITUTION} · Powered by Votta
+        Votta · Tamper-evident academic verification
       </footer>
       <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
         <DialogContent className="sm:max-w-md">
