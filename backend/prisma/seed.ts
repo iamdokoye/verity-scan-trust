@@ -41,11 +41,21 @@ async function main() {
     });
 
   if (createError) {
-    // User already exists — fetch them
+    // User already exists — fetch them and reset the demo credentials.
     const { data: listData } = await supabase.auth.admin.listUsers();
     const existing = listData?.users.find((u) => u.email === ADMIN_EMAIL);
     if (!existing) throw new Error(`Could not create or find admin user: ${createError.message}`);
     adminUserId = existing.id;
+    const { error: updateError } = await supabase.auth.admin.updateUserById(adminUserId, {
+      password: ADMIN_PASSWORD,
+      email_confirm: true,
+      user_metadata: {
+        role: 'admin',
+        institution_id: institution.id,
+        full_name: 'Dr. F. Adeyemi',
+      },
+    });
+    if (updateError) throw new Error(`Could not reset admin user: ${updateError.message}`);
     console.log('✓ Admin user (existing):', ADMIN_EMAIL);
   } else {
     adminUserId = createData.user!.id;
@@ -55,7 +65,12 @@ async function main() {
   // ── 3. Admin Profile ────────────────────────────────────────────────────────
   await prisma.profile.upsert({
     where:  { id: adminUserId },
-    update: {},
+    update: {
+      institutionId: institution.id,
+      role:          'admin',
+      fullName:      'Dr. F. Adeyemi',
+      email:         ADMIN_EMAIL,
+    },
     create: {
       id:            adminUserId,
       institutionId: institution.id,

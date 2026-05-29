@@ -52,14 +52,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .then((user) =>
               setState({ status: "authenticated", user: user as AuthUser })
             )
-            .catch(() => setState({ status: "unauthenticated" }));
+            .catch(() => {
+              tokenStore.clear();
+              setState({ status: "unauthenticated" });
+            });
         } else {
+          tokenStore.clear();
           setState({ status: "unauthenticated" });
         }
       });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    tokenStore.clear();
     await apiLogin(email, password);
     const user = await apiGetMe();
     setState({ status: "authenticated", user: user as AuthUser });
