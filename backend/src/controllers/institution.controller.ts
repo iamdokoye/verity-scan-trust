@@ -201,10 +201,15 @@ export const institutionController = {
         },
       });
 
+      // Build a clean frontend URL instead of exposing the raw Supabase auth URL.
+      // The hashed_token is the same token_hash Supabase would append when it
+      // redirects from the action_link — our accept-invite page handles it via verifyOtp.
+      const inviteUrl = `${redirectTo}?token_hash=${data.properties.hashed_token}&type=invite`;
+
       sendSuccess(res, {
         userId: data.user.id,
         email: data.user.email,
-        inviteUrl: data.properties.action_link,
+        inviteUrl,
       }, 201);
     } catch (err) {
       next(err);

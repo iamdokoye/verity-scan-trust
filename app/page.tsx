@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { QrCode, Camera } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { Html5Qrcode } from "html5-qrcode";
+import { QrCode, Camera, Loader2 } from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { INSTITUTION } from "@/lib/mock-data";
 
@@ -27,13 +35,34 @@ function statusToPath(
   return "/verify/not-found";
 }
 
+function extractVerificationToken(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed, window.location.origin);
+    const token = parsed.searchParams.get("token");
+    if (token) return token;
+
+    const pathToken = parsed.pathname.split("/").filter(Boolean).at(-1);
+    return pathToken ?? trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
 export default function VerifyHome() {
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerLoading, setScannerLoading] = useState(false);
+  const [scannerError, setScannerError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannedRef = useRef(false);
   const router = useRouter();
 
-  async function handleVerify() {
-    const t = token.trim();
+  async function verifyToken(value: string) {
+    const t = value.trim();
     if (!t) return;
     setLoading(true);
     try {
@@ -50,6 +79,71 @@ export default function VerifyHome() {
       setLoading(false);
     }
   }
+
+  async function handleVerify() {
+    await verifyToken(token);
+  }
+
+  useEffect(() => {
+    if (!scannerOpen) return;
+
+    let cancelled = false;
+
+    async function startScanner() {
+      setScannerLoading(true);
+      setScannerError(null);
+      scannedRef.current = false;
+
+      try {
+        const { Html5Qrcode } = await import("html5-qrcode");
+        if (cancelled) return;
+
+        const scanner = new Html5Qrcode("votta-qr-reader");
+        scannerRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          async (decodedText) => {
+            if (scannedRef.current) return;
+            const scannedToken = extractVerificationToken(decodedText);
+            if (!scannedToken) return;
+
+            scannedRef.current = true;
+            setToken(scannedToken);
+            setScannerOpen(false);
+            await verifyToken(scannedToken);
+          },
+          undefined
+        );
+
+        if (cancelled && scanner.isScanning) {
+          await scanner.stop().catch(() => {});
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setScannerError(
+            err instanceof Error
+              ? err.message
+              : "Camera access failed. Enter the token manually instead."
+          );
+        }
+      } finally {
+        if (!cancelled) setScannerLoading(false);
+      }
+    }
+
+    startScanner();
+
+    return () => {
+      cancelled = true;
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
+      if (scanner?.isScanning) {
+        scanner.stop().catch(() => {});
+      }
+    };
+  }, [scannerOpen]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -99,7 +193,13 @@ export default function VerifyHome() {
                 <div className="mt-1 text-xs text-muted-foreground">
                   Point your camera at the code on the document.
                 </div>
-                <Button variant="outline" className="mt-4" size="sm">
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  size="sm"
+                  onClick={() => setScannerOpen(true)}
+                  disabled={loading}
+                >
                   <QrCode className="h-4 w-4" /> Open scanner
                 </Button>
               </div>
@@ -174,6 +274,30 @@ export default function VerifyHome() {
       <footer className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground">
         {INSTITUTION} · Powered by Votta
       </footer>
+      <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan verification QR</DialogTitle>
+            <DialogDescription>
+              Allow camera access and place the credential QR code inside the frame.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-hidden rounded-md border border-border bg-muted">
+            <div id="votta-qr-reader" className="min-h-72 w-full" />
+          </div>
+          {scannerLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Starting camera…
+            </div>
+          )}
+          {scannerError && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {scannerError}
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,6 +9,10 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', requireRole('admin'), studentsController.list);
+
+// Student self-lookup: returns the current user's own student record
+router.get('/me', requireRole('student'), studentsController.getMe);
+
 router.get('/:id', studentsController.get);
 router.post('/', requireRole('admin'), validate(createStudentSchema), studentsController.create);
 router.patch('/:id', requireRole('admin'), validate(updateStudentSchema), studentsController.update);

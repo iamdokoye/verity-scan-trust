@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -9,19 +12,24 @@ import {
   ClipboardList,
   FileDown,
   ArrowUpRight,
+  Loader2,
 } from "lucide-react";
-import { adminStats, auditLog } from "@/lib/mock-data";
+import { apiGetAdminStats, type AdminStats } from "@/lib/api";
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
 
 function StatCard({
   icon: Icon,
   label,
   value,
   trend,
+  loading,
 }: {
   icon: typeof Users;
   label: string;
   value: string;
   trend?: string;
+  loading?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -35,7 +43,11 @@ function StatCard({
           </span>
         )}
       </div>
-      <div className="mt-4 text-2xl font-semibold text-foreground">{value}</div>
+      {loading ? (
+        <div className="mt-4 h-8 w-16 animate-pulse rounded bg-muted" />
+      ) : (
+        <div className="mt-4 text-2xl font-semibold text-foreground">{value}</div>
+      )}
       <div className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
@@ -43,13 +55,25 @@ function StatCard({
   );
 }
 
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+const QUICK_ACTIONS = [
+  { label: "Add Student", icon: UserPlus, to: "/admin/students" },
+  { label: "Upload Document", icon: Upload, to: "/admin/documents/upload" },
+  { label: "Enter Results", icon: ClipboardList, to: "/admin/results/new" },
+  { label: "Generate Transcript", icon: FileDown, to: "/admin/students" },
+];
+
 export default function AdminDash() {
-  const actions = [
-    { label: "Add Student", icon: UserPlus, to: "/admin/students" },
-    { label: "Upload Document", icon: Upload, to: "/admin/documents/upload" },
-    { label: "Enter Results", icon: ClipboardList, to: "/admin/results/new" },
-    { label: "Generate Transcript", icon: FileDown, to: "/admin/students" },
-  ];
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiGetAdminStats()
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div>
@@ -62,61 +86,85 @@ export default function AdminDash() {
         </p>
       </div>
 
+      {/* Stat cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Users}
           label="Total Students"
-          value={adminStats.totalStudents.toLocaleString()}
-          trend="+2.4%"
+          value={stats?.totalStudents.toLocaleString() ?? "—"}
+          loading={loading}
         />
         <StatCard
           icon={FileText}
           label="Total Documents"
-          value={adminStats.totalDocuments.toLocaleString()}
-          trend="+1.1%"
+          value={stats?.totalDocuments.toLocaleString() ?? "—"}
+          loading={loading}
         />
         <StatCard
           icon={ShieldCheck}
           label="Verifications Today"
-          value={String(adminStats.verificationsToday)}
-          trend="+12%"
+          value={stats?.verificationsToday != null ? String(stats.verificationsToday) : "—"}
+          loading={loading}
         />
         <StatCard
           icon={Clock}
-          label="Pending Uploads"
-          value={String(adminStats.pendingUploads)}
+          label="Pending Approval"
+          value={stats?.pendingDocuments != null ? String(stats.pendingDocuments) : "—"}
+          loading={loading}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent activity */}
         <div className="rounded-lg border border-border bg-card">
           <div className="border-b border-border px-5 py-4">
             <h3 className="text-base font-semibold text-foreground">
               Recent Activity
             </h3>
           </div>
-          <ul className="divide-y divide-border">
-            {auditLog.slice(0, 5).map((e, i) => (
-              <li key={i} className="px-5 py-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-foreground">{e.actor}</span>
-                  <span className="text-xs text-muted-foreground">{e.ts}</span>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  <span className="text-foreground">{e.action}</span> ·{" "}
-                  {e.target}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            </div>
+          ) : (stats?.recentActivity ?? []).length === 0 ? (
+            <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+              No recent activity.
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {(stats?.recentActivity ?? []).map((e) => (
+                <li key={e.id} className="px-5 py-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-foreground">
+                      {e.actor?.fullName ?? e.actor?.email ?? "System"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(e.createdAt).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    <span className="capitalize text-foreground">
+                      {e.action.toLowerCase().replace(/_/g, " ")}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
+        {/* Quick actions */}
         <div className="rounded-lg border border-border bg-card p-5">
           <h3 className="mb-4 text-base font-semibold text-foreground">
             Quick Actions
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            {actions.map((a) => (
+            {QUICK_ACTIONS.map((a) => (
               <Link
                 key={a.label}
                 href={a.to}

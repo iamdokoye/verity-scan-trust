@@ -6,6 +6,25 @@ import { auditService } from '../services/audit.service';
 import { gpaService } from '../services/gpa.service';
 
 export const studentsController = {
+  async getMe(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = req.user!;
+      const student = await prisma.student.findFirst({
+        where: { profileId: user.id, institutionId: user.institutionId! },
+        include: { department: true, institution: { select: { name: true, acronym: true } } },
+      });
+      if (!student) throw new NotFoundError('Student record');
+      const cgpa = await gpaService.computeCGPA(student.id);
+      sendSuccess(res, {
+        ...student,
+        cgpa,
+        degreeClass: gpaService.computeDegreeClass(cgpa),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const q = (req.query.q as string | undefined)?.trim();

@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { documentService } from '../services/document.service';
 import { storageService } from '../services/storage.service';
 import { transcriptService } from '../services/transcript.service';
+import { cryptoService } from '../services/crypto.service';
+import { auditService } from '../services/audit.service';
 import { prisma } from '../config/prisma';
+import { env } from '../config/env';
 import { sendSuccess, sendError } from '../utils/response';
 import { ForbiddenError, NotFoundError } from '../utils/errors';
 import { DocumentType } from '@prisma/client';
@@ -161,13 +165,78 @@ export const documentsController = {
 
   async generateTranscript(req: Request, res: Response, next: NextFunction) {
     try {
-      const buffer = await transcriptService.generateTranscriptPdf(req.params.studentId);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="transcript-${req.params.studentId}.pdf"`
+      const { studentId } = req.params;
+      const user = req.user!;
+      const institutionId = user.institutionId!;
+
+      const buffer = await transcriptService.generateTranscriptPdf(studentId);
+      const hash = cryptoService.hashFile(buffer);
+
+      const duplicate = await prisma.document.findFirst({
+        where: { sha256Hash: hash, studentId },
+      });
+
+      if (duplicate) {
+        return sendError(
+          res,
+          'An identical transcript already exists for this student.',
+          409,
+          'DUPLICATE_TRANSCRIPT'
+        );
+      }
+
+      const documentId = crypto.randomUUID();
+      const filePath = await storageService.uploadFile(
+        institutionId,
+        studentId,
+        documentId,
+        'transcript.pdf',
+        buffer,
+        'application/pdf'
       );
-      res.send(buffer);
+      const signature = cryptoService.signHash(hash);
+      const verificationToken = cryptoService.generateVerificationToken();
+      const qrCodeBase64 = await cryptoService.generateQRCode(
+        `${env.FRONTEND_URL}/verify?token=${verificationToken}`
+      );
+
+      const document = await prisma.document.create({
+        data: {
+          id: documentId,
+          studentId,
+          institutionId,
+          uploadedBy: user.id,
+          approvedBy: user.id,
+          documentType: 'transcript',
+          status: 'approved',
+          filePath,
+          fileName: 'transcript.pdf',
+          fileSizeBytes: buffer.length,
+          mimeType: 'application/pdf',
+          sha256Hash: hash,
+          signature,
+          signedAt: new Date(),
+          verificationToken,
+          qrCodeBase64,
+        },
+      });
+
+      await prisma.result.updateMany({
+        where: { studentId, isLocked: false },
+        data: { isLocked: true, lockedAt: new Date() },
+      });
+
+      await auditService.log({
+        actorId: user.id,
+        actorRole: user.role,
+        action: 'TRANSCRIPT_GENERATED',
+        severity: 'info',
+        targetType: 'Document',
+        targetId: documentId,
+        ipAddress: req.ip,
+      });
+
+      sendSuccess(res, document, 201);
     } catch (err) {
       next(err);
     }

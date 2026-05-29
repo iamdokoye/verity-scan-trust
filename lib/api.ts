@@ -277,3 +277,235 @@ export async function apiReactivateInstitution(id: string): Promise<Institution>
 export async function apiDeleteInstitution(id: string): Promise<void> {
   return api.delete(`/institution/${id}`);
 }
+
+// ── Students ─────────────────────────────────────────────────────────────────
+
+export type Student = {
+  id: string;
+  fullName: string;
+  matricNumber: string;
+  email: string | null;
+  phone: string | null;
+  departmentId: string | null;
+  department: { name: string } | null;
+  institutionId: string;
+  graduationYear: number | null;
+  admissionYear: number | null;
+  profileId: string | null;
+  createdAt: string;
+};
+
+export type StudentDetail = Student & {
+  cgpa: number;
+  degreeClass: string | null;
+  institution: { name: string; acronym: string };
+};
+
+export async function apiListStudents(q?: string): Promise<Student[]> {
+  const qs = q ? `?q=${encodeURIComponent(q)}` : "";
+  return api.get<Student[]>(`/students${qs}`);
+}
+
+export async function apiGetStudent(id: string): Promise<StudentDetail> {
+  return api.get<StudentDetail>(`/students/${id}`);
+}
+
+/** Student self-lookup — returns the current user's own student record. */
+export async function apiGetMyStudent(): Promise<StudentDetail> {
+  return api.get<StudentDetail>("/students/me");
+}
+
+// ── Results (academic summary) ────────────────────────────────────────────────
+
+export type CourseResult = {
+  id: string;
+  grade: string;
+  gradePoint: number;
+  course: { code: string; title: string; creditUnits: number };
+};
+
+export type SessionGroup = {
+  sessionLabel: string;
+  semester: string;
+  gpa: number;
+  results: CourseResult[];
+};
+
+export type AcademicSummary = {
+  cgpa: number;
+  degreeClass: string | null;
+  sessions: SessionGroup[];
+  totalResults: number;
+};
+
+export async function apiGetStudentResults(studentId: string): Promise<AcademicSummary> {
+  return api.get<AcademicSummary>(`/results/students/${studentId}`);
+}
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+
+export type DocumentStatus =
+  | "pending_approval"
+  | "approved"
+  | "rejected"
+  | "superseded"
+  | "revoked";
+
+export type DocumentType = "degree_certificate" | "transcript" | "other";
+
+export type VottaDocument = {
+  id: string;
+  documentType: DocumentType;
+  status: DocumentStatus;
+  fileName: string;
+  fileSizeBytes: number;
+  mimeType: string;
+  sha256Hash: string | null;
+  signedAt: string | null;
+  createdAt: string;
+  verificationToken: string | null;
+  qrCodeBase64: string | null;
+  approvalNote: string | null;
+  supersessionReason: string | null;
+  revocationReason: string | null;
+  student?: { fullName: string; matricNumber: string };
+  uploader?: { fullName: string | null; email: string };
+};
+
+export async function apiUploadDocument(
+  studentId: string,
+  formData: FormData
+): Promise<VottaDocument> {
+  return api.post<VottaDocument>(`/documents/students/${studentId}`, {
+    body: formData,
+  });
+}
+
+export async function apiGetStudentDocuments(
+  studentId: string
+): Promise<VottaDocument[]> {
+  return api.get<VottaDocument[]>(`/documents/students/${studentId}`);
+}
+
+export async function apiListPendingDocuments(page = 1): Promise<{
+  items: VottaDocument[];
+  total: number;
+  pageSize: number;
+}> {
+  const token = tokenStore.get();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(
+    `${BASE_URL}/documents/pending?page=${page}&pageSize=20`,
+    { method: "GET", headers }
+  );
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      json?.error?.code,
+      json?.error?.message ?? `HTTP ${res.status}`
+    );
+  }
+  return {
+    items: (json.data as VottaDocument[]) ?? [],
+    total: (json.meta?.total as number) ?? 0,
+    pageSize: (json.meta?.pageSize as number) ?? 20,
+  };
+}
+
+export async function apiApproveDocument(
+  documentId: string,
+  approvalNote?: string
+): Promise<VottaDocument> {
+  return api.patch<VottaDocument>(`/documents/${documentId}/approve`, {
+    body: { approvalNote },
+  });
+}
+
+export async function apiRejectDocument(
+  documentId: string,
+  rejectionReason: string
+): Promise<VottaDocument> {
+  return api.patch<VottaDocument>(`/documents/${documentId}/reject`, {
+    body: { rejectionReason },
+  });
+}
+
+export async function apiRevokeDocument(
+  documentId: string,
+  revocationReason: string
+): Promise<VottaDocument> {
+  return api.patch<VottaDocument>(`/documents/${documentId}/revoke`, {
+    body: { revocationReason },
+  });
+}
+
+export async function apiGetDocumentDownloadUrl(
+  documentId: string
+): Promise<{ url: string; expiresIn: number }> {
+  return api.get<{ url: string; expiresIn: number }>(
+    `/documents/${documentId}/download`
+  );
+}
+
+// ── Admin stats ───────────────────────────────────────────────────────────────
+
+export type AdminStats = {
+  totalStudents: number;
+  totalDocuments: number;
+  pendingDocuments: number;
+  verificationsToday: number;
+  recentActivity: Array<{
+    id: string;
+    action: string;
+    createdAt: string;
+    actor: { fullName: string | null; email: string } | null;
+  }>;
+};
+
+export async function apiGetAdminStats(): Promise<AdminStats> {
+  return api.get<AdminStats>("/admin/stats");
+}
+
+// ── Academic sessions ─────────────────────────────────────────────────────────
+
+export type AcademicSession = {
+  id: string;
+  label: string;
+  semester: string;
+  institutionId: string;
+};
+
+export async function apiListSessions(): Promise<AcademicSession[]> {
+  return api.get<AcademicSession[]>("/sessions");
+}
+
+// ── Results ───────────────────────────────────────────────────────────────────
+
+export type Grade = "A" | "B" | "C" | "D" | "E" | "F";
+
+export type Course = {
+  id: string;
+  code: string;
+  title: string;
+  units: number;
+  departmentId: string;
+};
+
+export async function apiListCourses(departmentId?: string): Promise<Course[]> {
+  const qs = departmentId ? `?departmentId=${departmentId}` : "";
+  return api.get<Course[]>(`/courses${qs}`);
+}
+
+export async function apiBulkSaveResults(
+  results: Array<{
+    studentId: string;
+    sessionId: string;
+    courseId: string;
+    grade: Grade;
+  }>
+): Promise<{ count: number }> {
+  return api.post<{ count: number }>("/results/bulk", { body: { results } });
+}

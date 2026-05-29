@@ -10,6 +10,50 @@ const router = Router();
 router.use(requireAuth, requireRole('admin'));
 
 /**
+ * GET /api/v1/admin/stats
+ * Returns institution-level stats for the admin dashboard.
+ */
+router.get('/stats', async (req, res, next) => {
+  try {
+    const institutionId = req.user!.institutionId!;
+
+    const [
+      totalStudents,
+      totalDocuments,
+      pendingDocuments,
+      verifications,
+    ] = await Promise.all([
+      prisma.student.count({ where: { institutionId } }),
+      prisma.document.count({ where: { institutionId } }),
+      prisma.document.count({ where: { institutionId, status: 'pending_approval' } }),
+      prisma.auditLog.count({
+        where: {
+          action: 'VERIFICATION_PERFORMED',
+          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        },
+      }),
+    ]);
+
+    const recentActivity = await prisma.auditLog.findMany({
+      where: { actor: { institutionId } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { actor: { select: { fullName: true, email: true } } },
+    });
+
+    sendSuccess(res, {
+      totalStudents,
+      totalDocuments,
+      pendingDocuments,
+      verificationsToday: verifications,
+      recentActivity,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * PATCH /api/v1/admin/tamper/:documentId
  *
  * Demo-only endpoint. Corrupts the stored sha256Hash for an approved document
