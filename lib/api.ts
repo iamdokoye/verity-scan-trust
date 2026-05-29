@@ -336,6 +336,7 @@ export type Student = {
   phone: string | null;
   departmentId: string | null;
   department: { name: string } | null;
+  programme: string | null;
   institutionId: string;
   graduationYear: number | null;
   admissionYear: number | null;
@@ -352,6 +353,17 @@ export type StudentDetail = Student & {
 export async function apiListStudents(q?: string): Promise<Student[]> {
   const qs = q ? `?q=${encodeURIComponent(q)}` : "";
   return api.get<Student[]>(`/students${qs}`);
+}
+
+export async function apiCreateStudent(body: {
+  matricNumber: string;
+  fullName: string;
+  departmentId: string;
+  programme?: string;
+  admissionYear?: number;
+  graduationYear?: number;
+}): Promise<Student> {
+  return api.post<Student>("/students", { body });
 }
 
 export async function apiGetStudent(id: string): Promise<StudentDetail> {
@@ -545,6 +557,26 @@ export type Course = {
 export async function apiListCourses(departmentId?: string): Promise<Course[]> {
   const qs = departmentId ? `?departmentId=${departmentId}` : "";
   return api.get<Course[]>(`/courses${qs}`);
+}
+
+export type Department = {
+  id: string;
+  institutionId: string;
+  name: string;
+  hodName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function apiListDepartments(): Promise<Department[]> {
+  return api.get<Department[]>("/departments");
+}
+
+export async function apiCreateDepartment(body: {
+  name: string;
+  hodName?: string;
+}): Promise<Department> {
+  return api.post<Department>("/departments", { body });
 }
 
 export async function apiBulkSaveResults(

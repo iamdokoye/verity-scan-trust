@@ -47,7 +47,9 @@ export function PortalShell({
           {items.map((item) => {
             const active =
               pathname === item.to ||
-              (item.to !== "/" && pathname.startsWith(item.to));
+              (item.to !== "/" &&
+                item.to !== "/admin" &&
+                pathname.startsWith(`${item.to}/`));
             const Icon = item.icon;
             return (
               <Link
