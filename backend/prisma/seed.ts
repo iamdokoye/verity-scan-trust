@@ -66,25 +66,49 @@ async function main() {
   });
   console.log('✓ Admin profile linked\n');
 
-  // ── 4. Departments ──────────────────────────────────────────────────────────
+  // ── 4. Faculties ────────────────────────────────────────────────────────────
+  const facultyDefs = [
+    { name: 'Faculty of Science', code: 'SCI' },
+    { name: 'Faculty of Engineering', code: 'ENG' },
+    { name: 'Faculty of Communication', code: 'COM' },
+  ];
+
+  const faculties: Record<string, string> = {};
+  for (const f of facultyDefs) {
+    const faculty = await prisma.faculty.upsert({
+      where: { institutionId_name: { institutionId: institution.id, name: f.name } },
+      update: { code: f.code },
+      create: { institutionId: institution.id, ...f },
+    });
+    faculties[f.name] = faculty.id;
+    console.log(`✓ Faculty: ${f.name}`);
+  }
+  console.log('');
+
+  // ── 5. Departments ──────────────────────────────────────────────────────────
   const deptDefs = [
-    { name: 'Computer Science',      hodName: 'Prof. A. Okonkwo' },
-    { name: 'Electrical Engineering', hodName: 'Dr. K. Bello'    },
-    { name: 'Mass Communication',     hodName: 'Mrs. T. Adesanya' },
+    { name: 'Computer Science', faculty: 'Faculty of Science', hodName: 'Prof. A. Okonkwo' },
+    { name: 'Electrical Engineering', faculty: 'Faculty of Engineering', hodName: 'Dr. K. Bello' },
+    { name: 'Mass Communication', faculty: 'Faculty of Communication', hodName: 'Mrs. T. Adesanya' },
   ];
 
   const departments: Record<string, string> = {};
   for (const d of deptDefs) {
     const dept = await prisma.department.upsert({
       where:  { institutionId_name: { institutionId: institution.id, name: d.name } },
-      update: {},
-      create: { institutionId: institution.id, ...d },
+      update: { facultyId: faculties[d.faculty], hodName: d.hodName },
+      create: {
+        institutionId: institution.id,
+        facultyId: faculties[d.faculty],
+        name: d.name,
+        hodName: d.hodName,
+      },
     });
     departments[d.name] = dept.id;
     console.log(`✓ Department: ${d.name}`);
   }
 
-  // ── 5. Academic Sessions ────────────────────────────────────────────────────
+  // ── 6. Academic Sessions ────────────────────────────────────────────────────
   const sessionDefs = [
     { label: '2021/2022', semester: 'first'  as const },
     { label: '2021/2022', semester: 'second' as const },
@@ -116,7 +140,7 @@ async function main() {
   }
   console.log(`✓ ${sessionDefs.length} academic sessions\n`);
 
-  // ── 6. Courses ──────────────────────────────────────────────────────────────
+  // ── 7. Courses ──────────────────────────────────────────────────────────────
   const csDeptId = departments['Computer Science'];
   const courseDefs = [
     { code: 'CSC101', title: 'Introduction to Computer Science', creditUnits: 3 },
@@ -139,7 +163,7 @@ async function main() {
   }
   console.log(`✓ ${courseDefs.length} courses\n`);
 
-  // ── 7. Students ─────────────────────────────────────────────────────────────
+  // ── 8. Students ─────────────────────────────────────────────────────────────
   const studentDefs = [
     { matric: 'CSC/2020/001', name: 'Ada Okonkwo',        dept: 'Computer Science', prog: 'B.Sc. Computer Science'       },
     { matric: 'CSC/2020/002', name: 'Tunde Bello',         dept: 'Computer Science', prog: 'B.Sc. Computer Science'       },
@@ -178,7 +202,7 @@ async function main() {
   }
   console.log(`✓ ${studentDefs.length} students\n`);
 
-  // ── 8. Results for first 3 CS students ─────────────────────────────────────
+  // ── 9. Results for first 3 CS students ─────────────────────────────────────
   // Seed enough results to demonstrate CGPA computation
   const gradeTable: Record<string, { grade: string; point: number }[]> = {
     [studentIds[0]]: [

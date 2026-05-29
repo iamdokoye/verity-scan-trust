@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Loader2, UserPlus } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   apiCreateStudent,
   apiListDepartments,
+  apiListFaculties,
   apiListStudents,
   type Department,
+  type Faculty,
   type Student,
 } from "@/lib/api";
 import {
@@ -22,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-function toOptionalNumber(value: string) {
+function optionalNumber(value: string) {
   const trimmed = value.trim();
   return trimmed ? Number(trimmed) : undefined;
 }
@@ -30,33 +32,59 @@ function toOptionalNumber(value: string) {
 function AddStudentDialog({
   open,
   onOpenChange,
+  faculties,
   departments,
   onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  faculties: Faculty[];
   departments: Department[];
   onCreated: () => Promise<void>;
 }) {
+  const [facultyId, setFacultyId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [matricNumber, setMatricNumber] = useState("");
   const [fullName, setFullName] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
   const [programme, setProgramme] = useState("");
   const [admissionYear, setAdmissionYear] = useState("");
   const [graduationYear, setGraduationYear] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const availableDepartments = useMemo(
+    () => departments.filter((department) => department.facultyId === facultyId),
+    [departments, facultyId]
+  );
+
   useEffect(() => {
-    if (open && !departmentId && departments.length > 0) {
-      setDepartmentId(departments[0].id);
+    if (!open) return;
+    if (!facultyId && faculties.length > 0) {
+      setFacultyId(faculties[0].id);
     }
-  }, [departmentId, departments, open]);
+  }, [faculties, facultyId, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const stillValid = availableDepartments.some(
+      (department) => department.id === departmentId
+    );
+    if (availableDepartments.length > 0 && !stillValid) {
+      setDepartmentId(availableDepartments[0].id);
+    }
+    if (availableDepartments.length === 0) {
+      setDepartmentId("");
+    }
+  }, [availableDepartments, departmentId, open]);
 
   function reset() {
+    const firstFacultyId = faculties[0]?.id ?? "";
+    setFacultyId(firstFacultyId);
+    setDepartmentId(
+      departments.find((department) => department.facultyId === firstFacultyId)?.id ?? ""
+    );
     setMatricNumber("");
     setFullName("");
-    setDepartmentId(departments[0]?.id ?? "");
     setProgramme("");
     setAdmissionYear("");
     setGraduationYear("");
@@ -73,8 +101,8 @@ function AddStudentDialog({
         fullName: fullName.trim(),
         departmentId,
         programme: programme.trim() || undefined,
-        admissionYear: toOptionalNumber(admissionYear),
-        graduationYear: toOptionalNumber(graduationYear),
+        admissionYear: optionalNumber(admissionYear),
+        graduationYear: optionalNumber(graduationYear),
       });
       await onCreated();
       reset();
@@ -98,10 +126,9 @@ function AddStudentDialog({
         <DialogHeader>
           <DialogTitle>Add Student</DialogTitle>
           <DialogDescription>
-            Create a student record for this institution.
+            Create a student under a faculty and department.
           </DialogDescription>
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -133,21 +160,21 @@ function AddStudentDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">
-                Department
+                Faculty
               </label>
               <select
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={departmentId}
-                onChange={(event) => setDepartmentId(event.target.value)}
+                value={facultyId}
+                onChange={(event) => setFacultyId(event.target.value)}
                 required
-                disabled={departments.length === 0}
+                disabled={faculties.length === 0}
               >
-                {departments.length === 0 ? (
-                  <option value="">Create a department first</option>
+                {faculties.length === 0 ? (
+                  <option value="">Create a faculty first</option>
                 ) : (
-                  departments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
+                  faculties.map((faculty) => (
+                    <option key={faculty.id} value={faculty.id}>
+                      {faculty.name}
                     </option>
                   ))
                 )}
@@ -155,14 +182,37 @@ function AddStudentDialog({
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">
-                Faculty / Programme
+                Department
               </label>
-              <Input
-                value={programme}
-                onChange={(event) => setProgramme(event.target.value)}
-                placeholder="Faculty of Science"
-              />
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={departmentId}
+                onChange={(event) => setDepartmentId(event.target.value)}
+                required
+                disabled={availableDepartments.length === 0}
+              >
+                {availableDepartments.length === 0 ? (
+                  <option value="">Create a department first</option>
+                ) : (
+                  availableDepartments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-foreground">
+              Programme
+            </label>
+            <Input
+              value={programme}
+              onChange={(event) => setProgramme(event.target.value)}
+              placeholder="B.Sc. Computer Science"
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -190,9 +240,14 @@ function AddStudentDialog({
             </div>
           </div>
 
-          {departments.length === 0 && (
+          {faculties.length === 0 && (
             <p className="rounded-md bg-warning/15 px-3 py-2 text-xs text-foreground">
-              Add at least one department before creating a student.
+              Add at least one faculty before creating students.
+            </p>
+          )}
+          {faculties.length > 0 && availableDepartments.length === 0 && (
+            <p className="rounded-md bg-warning/15 px-3 py-2 text-xs text-foreground">
+              Add a department under the selected faculty before creating students.
             </p>
           )}
           {error && (
@@ -212,7 +267,7 @@ function AddStudentDialog({
             </Button>
             <Button
               type="submit"
-              disabled={submitting || departments.length === 0}
+              disabled={submitting || availableDepartments.length === 0}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Create Student
@@ -226,20 +281,19 @@ function AddStudentDialog({
 
 export default function StudentsList() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchStudents = useCallback(async (q: string) => {
     setLoading(true);
     setError(null);
     try {
-      const results = await apiListStudents(q || undefined);
-      setStudents(results);
+      setStudents(await apiListStudents(q || undefined));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load students.");
     } finally {
@@ -247,25 +301,27 @@ export default function StudentsList() {
     }
   }, []);
 
-  const loadDepartments = useCallback(async () => {
-    try {
-      setDepartments(await apiListDepartments());
-    } catch {
-      setDepartments([]);
-    }
+  const loadAcademicStructure = useCallback(async () => {
+    const [facultyItems, departmentItems] = await Promise.all([
+      apiListFaculties(),
+      apiListDepartments(),
+    ]);
+    setFaculties(facultyItems);
+    setDepartments(departmentItems);
   }, []);
 
   useEffect(() => {
     fetchStudents("");
-    loadDepartments();
-  }, [fetchStudents, loadDepartments]);
+    loadAcademicStructure().catch(() => {
+      setFaculties([]);
+      setDepartments([]);
+    });
+  }, [fetchStudents, loadAcademicStructure]);
 
   function handleSearch(value: string) {
     setQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      fetchStudents(value);
-    }, 350);
+    debounceRef.current = setTimeout(() => fetchStudents(value), 350);
   }
 
   return (
@@ -283,7 +339,7 @@ export default function StudentsList() {
         <Input
           placeholder="Search by name or matric..."
           value={query}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(event) => handleSearch(event.target.value)}
         />
       </div>
 
@@ -311,7 +367,7 @@ export default function StudentsList() {
           <p className="text-sm text-muted-foreground">
             {query
               ? "Try a different search term."
-              : "Students will appear here once they sign up or are added."}
+              : "Students will appear here once they are added."}
           </p>
         </div>
       ) : (
@@ -322,10 +378,13 @@ export default function StudentsList() {
                 <th className="px-5 py-3 text-left font-medium">Matric No.</th>
                 <th className="px-5 py-3 text-left font-medium">Name</th>
                 <th className="hidden px-5 py-3 text-left font-medium md:table-cell">
+                  Faculty
+                </th>
+                <th className="hidden px-5 py-3 text-left font-medium md:table-cell">
                   Department
                 </th>
                 <th className="hidden px-5 py-3 text-left font-medium lg:table-cell">
-                  Faculty / Programme
+                  Programme
                 </th>
                 <th className="hidden px-5 py-3 text-center font-medium sm:table-cell">
                   Adm. Year
@@ -334,26 +393,29 @@ export default function StudentsList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {students.map((s) => (
-                <tr key={s.id} className="hover:bg-muted/30">
+              {students.map((student) => (
+                <tr key={student.id} className="hover:bg-muted/30">
                   <td className="px-5 py-3 font-mono text-foreground">
-                    {s.matricNumber}
+                    {student.matricNumber}
                   </td>
                   <td className="px-5 py-3 font-medium text-foreground">
-                    {s.fullName}
+                    {student.fullName}
                   </td>
                   <td className="hidden px-5 py-3 text-foreground md:table-cell">
-                    {s.department?.name ?? <span className="text-muted-foreground">-</span>}
+                    {student.department?.faculty?.name ?? "-"}
+                  </td>
+                  <td className="hidden px-5 py-3 text-foreground md:table-cell">
+                    {student.department?.name ?? "-"}
                   </td>
                   <td className="hidden px-5 py-3 text-foreground lg:table-cell">
-                    {s.programme ?? <span className="text-muted-foreground">-</span>}
+                    {student.programme ?? "-"}
                   </td>
                   <td className="hidden px-5 py-3 text-center text-foreground sm:table-cell">
-                    {s.admissionYear ?? "-"}
+                    {student.admissionYear ?? "-"}
                   </td>
                   <td className="px-5 py-3 text-right">
                     <Link
-                      href={`/admin/students/${s.id}`}
+                      href={`/admin/students/${student.id}`}
                       className="text-xs font-medium text-secondary hover:underline"
                     >
                       View profile
@@ -373,6 +435,7 @@ export default function StudentsList() {
       <AddStudentDialog
         open={addOpen}
         onOpenChange={setAddOpen}
+        faculties={faculties}
         departments={departments}
         onCreated={async () => {
           await fetchStudents(query);

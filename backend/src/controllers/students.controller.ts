@@ -11,7 +11,10 @@ export const studentsController = {
       const user = req.user!;
       const student = await prisma.student.findFirst({
         where: { profileId: user.id, institutionId: user.institutionId! },
-        include: { department: true, institution: { select: { name: true, acronym: true } } },
+        include: {
+          department: { include: { faculty: true } },
+          institution: { select: { name: true, acronym: true } },
+        },
       });
       if (!student) throw new NotFoundError('Student record');
       const cgpa = await gpaService.computeCGPA(student.id);
@@ -38,7 +41,7 @@ export const studentsController = {
             ],
           }),
         },
-        include: { department: { select: { name: true } } },
+        include: { department: { include: { faculty: true } } },
         orderBy: { matricNumber: 'asc' },
         take: 200,
       });
@@ -53,7 +56,10 @@ export const studentsController = {
       const user = req.user!;
       const student = await prisma.student.findFirst({
         where: { id: req.params.id, institutionId: user.institutionId! },
-        include: { department: true, institution: { select: { name: true, acronym: true } } },
+        include: {
+          department: { include: { faculty: true } },
+          institution: { select: { name: true, acronym: true } },
+        },
       });
       if (!student) throw new NotFoundError('Student');
       if (user.role === 'student' && student.profileId !== user.id) {
@@ -72,12 +78,17 @@ export const studentsController = {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
+      const department = await prisma.department.findFirst({
+        where: { id: req.body.departmentId, institutionId: req.user!.institutionId! },
+      });
+      if (!department) throw new NotFoundError('Department');
       const student = await prisma.student.create({
         data: {
           ...req.body,
           institutionId: req.user!.institutionId!,
           createdBy: req.user!.id,
         },
+        include: { department: { include: { faculty: true } } },
       });
       await auditService.log({
         actorId: req.user!.id,

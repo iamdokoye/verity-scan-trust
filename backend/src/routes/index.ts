@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes';
 import institutionRoutes from './institution.routes';
 import superAdminRoutes from './superadmin.routes';
+import facultyRoutes from './faculties.routes';
 import departmentRoutes from './departments.routes';
 import studentRoutes from './students.routes';
 import sessionRoutes from './sessions.routes';
@@ -16,6 +17,7 @@ export const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/institution', institutionRoutes);
+router.use('/faculties', facultyRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/students', studentRoutes);
 router.use('/sessions', sessionRoutes);

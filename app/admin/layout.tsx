@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Building2,
+  Landmark,
   Users,
   GraduationCap,
   FileText,
@@ -45,6 +46,7 @@ export default function AdminLayout({
       onLogout={logout}
       items={[
         { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
+        { label: "Faculties", to: "/admin/faculties", icon: Landmark },
         { label: "Departments", to: "/admin/departments", icon: Building2 },
         { label: "Students", to: "/admin/students", icon: Users },
         { label: "Results", to: "/admin/results", icon: GraduationCap },

@@ -103,6 +103,7 @@ model Institution {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   profiles    Profile[]
+  faculties   Faculty[]
   departments Department[]
   students    Student[]
   sessions    AcademicSession[]
@@ -131,19 +132,38 @@ model Profile {
   @@map("profiles")
 }
 
+model Faculty {
+  id            String   @id @default(uuid())
+  institutionId String   @map("institution_id")
+  name          String   @db.VarChar(200)
+  code          String?  @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  institution Institution @relation(fields: [institutionId], references: [id])
+  departments Department[]
+
+  @@unique([institutionId, name])
+  @@unique([institutionId, code])
+  @@map("faculties")
+}
+
 model Department {
   id            String   @id @default(uuid())
   institutionId String   @map("institution_id")
+  facultyId     String   @map("faculty_id")
   name          String   @db.VarChar(200)
   hodName       String?  @map("hod_name") @db.VarChar(200)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   institution Institution @relation(fields: [institutionId], references: [id])
+  faculty     Faculty     @relation(fields: [facultyId], references: [id])
   students    Student[]
   courses     Course[]
 
   @@unique([institutionId, name])
+  @@index([facultyId])
   @@map("departments")
 }
 

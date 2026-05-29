@@ -335,7 +335,7 @@ export type Student = {
   email: string | null;
   phone: string | null;
   departmentId: string | null;
-  department: { name: string } | null;
+  department: Department | null;
   programme: string | null;
   institutionId: string;
   graduationYear: number | null;
@@ -554,6 +554,27 @@ export type Course = {
   departmentId: string;
 };
 
+export type Faculty = {
+  id: string;
+  institutionId: string;
+  name: string;
+  code: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { departments: number };
+};
+
+export async function apiListFaculties(): Promise<Faculty[]> {
+  return api.get<Faculty[]>("/faculties");
+}
+
+export async function apiCreateFaculty(body: {
+  name: string;
+  code?: string;
+}): Promise<Faculty> {
+  return api.post<Faculty>("/faculties", { body });
+}
+
 export async function apiListCourses(departmentId?: string): Promise<Course[]> {
   const qs = departmentId ? `?departmentId=${departmentId}` : "";
   return api.get<Course[]>(`/courses${qs}`);
@@ -562,10 +583,12 @@ export async function apiListCourses(departmentId?: string): Promise<Course[]> {
 export type Department = {
   id: string;
   institutionId: string;
+  facultyId: string;
   name: string;
   hodName: string | null;
   createdAt: string;
   updatedAt: string;
+  faculty?: Faculty;
 };
 
 export async function apiListDepartments(): Promise<Department[]> {
@@ -573,6 +596,7 @@ export async function apiListDepartments(): Promise<Department[]> {
 }
 
 export async function apiCreateDepartment(body: {
+  facultyId: string;
   name: string;
   hodName?: string;
 }): Promise<Department> {

@@ -3,13 +3,13 @@ import { prisma } from '../config/prisma';
 import { sendSuccess } from '../utils/response';
 import { NotFoundError } from '../utils/errors';
 
-export const departmentsController = {
+export const facultiesController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const items = await prisma.department.findMany({
+      const items = await prisma.faculty.findMany({
         where: { institutionId: req.user!.institutionId! },
         orderBy: { name: 'asc' },
-        include: { faculty: true },
+        include: { _count: { select: { departments: true } } },
       });
       sendSuccess(res, items);
     } catch (err) {
@@ -19,13 +19,8 @@ export const departmentsController = {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const faculty = await prisma.faculty.findFirst({
-        where: { id: req.body.facultyId, institutionId: req.user!.institutionId! },
-      });
-      if (!faculty) throw new NotFoundError('Faculty');
-      const item = await prisma.department.create({
+      const item = await prisma.faculty.create({
         data: { ...req.body, institutionId: req.user!.institutionId! },
-        include: { faculty: true },
       });
       sendSuccess(res, item, 201);
     } catch (err) {
@@ -35,20 +30,13 @@ export const departmentsController = {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const existing = await prisma.department.findFirst({
+      const existing = await prisma.faculty.findFirst({
         where: { id: req.params.id, institutionId: req.user!.institutionId! },
       });
-      if (!existing) throw new NotFoundError('Department');
-      if (req.body.facultyId) {
-        const faculty = await prisma.faculty.findFirst({
-          where: { id: req.body.facultyId, institutionId: req.user!.institutionId! },
-        });
-        if (!faculty) throw new NotFoundError('Faculty');
-      }
-      const item = await prisma.department.update({
+      if (!existing) throw new NotFoundError('Faculty');
+      const item = await prisma.faculty.update({
         where: { id: req.params.id },
         data: req.body,
-        include: { faculty: true },
       });
       sendSuccess(res, item);
     } catch (err) {
@@ -58,11 +46,11 @@ export const departmentsController = {
 
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
-      const existing = await prisma.department.findFirst({
+      const existing = await prisma.faculty.findFirst({
         where: { id: req.params.id, institutionId: req.user!.institutionId! },
       });
-      if (!existing) throw new NotFoundError('Department');
-      await prisma.department.delete({ where: { id: req.params.id } });
+      if (!existing) throw new NotFoundError('Faculty');
+      await prisma.faculty.delete({ where: { id: req.params.id } });
       sendSuccess(res, { ok: true });
     } catch (err) {
       next(err);
