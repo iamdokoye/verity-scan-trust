@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { env } from '../config/env';
+import { prisma } from '../config/prisma';
 import { sendError } from '../utils/response';
 import { UserRole } from '@prisma/client';
 
@@ -23,11 +24,30 @@ export async function requireAuth(
       issuer: `${env.SUPABASE_URL}/auth/v1`,
     });
 
-    const userId = payload.sub as string;
-    const userRole = payload['user_role'] as string;
-    const institutionId = payload['institution_id'] as string | undefined;
+    const userId = payload.sub as string | undefined;
+    let userRole = payload['user_role'] as string | undefined;
+    let institutionId = payload['institution_id'] as string | undefined;
 
-    if (!userId || !userRole) {
+    if (!userId) {
+      return sendError(res, 'Invalid token claims', 401, 'UNAUTHORIZED');
+    }
+
+    if (!userRole || (userRole !== 'super_admin' && !institutionId)) {
+      const profile = await prisma.profile.findUnique({
+        where: { id: userId },
+        select: {
+          role: true,
+          institutionId: true,
+        },
+      });
+
+      if (profile) {
+        userRole = profile.role;
+        institutionId = profile.institutionId ?? undefined;
+      }
+    }
+
+    if (!userRole) {
       return sendError(res, 'Invalid token claims', 401, 'UNAUTHORIZED');
     }
 
