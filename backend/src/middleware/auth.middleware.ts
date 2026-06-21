@@ -6,6 +6,36 @@ import { sendError } from '../utils/response';
 import { UserRole } from '@prisma/client';
 
 const JWKS = createRemoteJWKSet(new URL(env.SUPABASE_JWKS_URL));
+const PROFILE_CACHE_TTL_MS = 60 * 1000;
+const profileCache = new Map<
+  string,
+  { role: UserRole; institutionId?: string; expiresAt: number }
+>();
+
+async function getProfileClaims(userId: string) {
+  const cached = profileCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached;
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      institutionId: true,
+    },
+  });
+
+  if (!profile) return null;
+
+  const claims = {
+    role: profile.role,
+    institutionId: profile.institutionId ?? undefined,
+    expiresAt: Date.now() + PROFILE_CACHE_TTL_MS,
+  };
+  profileCache.set(userId, claims);
+  return claims;
+}
 
 export async function requireAuth(
   req: Request,
@@ -33,17 +63,11 @@ export async function requireAuth(
     }
 
     if (!userRole || (userRole !== 'super_admin' && !institutionId)) {
-      const profile = await prisma.profile.findUnique({
-        where: { id: userId },
-        select: {
-          role: true,
-          institutionId: true,
-        },
-      });
+      const claims = await getProfileClaims(userId);
 
-      if (profile) {
-        userRole = profile.role;
-        institutionId = profile.institutionId ?? undefined;
+      if (claims) {
+        userRole = claims.role;
+        institutionId = claims.institutionId;
       }
     }
 

@@ -9,19 +9,11 @@ import { Logo } from "@/components/votta/Logo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-
-type VerifyStatus =
-  | "verified"
-  | "tampered"
-  | "invalid_signature"
-  | "superseded"
-  | "revoked"
-  | "not_found";
-
-type VerifyResponse = {
-  status: VerifyStatus;
-  reason?: string | null;
-};
+import {
+  cacheVerifyResult,
+  type VerifyResult,
+  type VerifyStatus,
+} from "@/lib/verify-cache";
 
 function statusToPath(
   status: VerifyStatus
@@ -46,10 +38,11 @@ export function NotFoundContent() {
     if (!t) return;
     setLoading(true);
     try {
-      const result = await api.get<VerifyResponse>(
+      const result = await api.get<VerifyResult>(
         `/verify?token=${encodeURIComponent(t)}`,
         { noAuth: true }
       );
+      cacheVerifyResult(t, result);
       const reasonParam = result.reason
         ? `&reason=${encodeURIComponent(result.reason)}`
         : "";

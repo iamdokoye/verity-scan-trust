@@ -6,19 +6,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
 import { api } from "@/lib/api";
-
-type VerifyResult = {
-  status: string;
-  studentName?: string;
-  matricNumber?: string;
-  institution?: string;
-  documentType?: string;
-  programme?: string;
-  sha256Hash?: string;
-  signedAt?: string;
-  verifiedAt?: string;
-  message?: string;
-};
+import { getCachedVerifyResult, type VerifyResult } from "@/lib/verify-cache";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -39,6 +27,12 @@ export function VerifiedResultContent() {
 
   useEffect(() => {
     if (!token) {
+      setLoading(false);
+      return;
+    }
+    const cached = getCachedVerifyResult(token);
+    if (cached) {
+      setResult(cached);
       setLoading(false);
       return;
     }

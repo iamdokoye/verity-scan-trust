@@ -113,6 +113,8 @@ export type LoginResponse = {
   user: {
     id: string;
     email: string;
+    role: "super_admin" | "admin" | "student";
+    institutionId?: string | null;
   };
 };
 

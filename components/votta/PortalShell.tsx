@@ -26,6 +26,9 @@ export function PortalShell({
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const activeItem = items
+    .filter((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+    .sort((a, b) => b.to.length - a.to.length)[0];
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -45,11 +48,7 @@ export function PortalShell({
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
           {items.map((item) => {
-            const active =
-              pathname === item.to ||
-              (item.to !== "/" &&
-                item.to !== "/admin" &&
-                pathname.startsWith(`${item.to}/`));
+            const active = activeItem?.to === item.to;
             const Icon = item.icon;
             return (
               <Link

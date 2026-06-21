@@ -184,7 +184,7 @@ export class VerificationService {
     status: VerificationStatus | string;
     failureReason?: string;
   }) {
-    await prisma.verificationLog.create({
+    const verificationLog = prisma.verificationLog.create({
       data: {
         documentId: params.documentId,
         tokenUsed: params.token,
@@ -197,7 +197,9 @@ export class VerificationService {
     });
 
     if (params.documentId) {
-      await auditService.log({
+      await Promise.all([
+        verificationLog,
+        auditService.log({
         action: 'VERIFICATION_PERFORMED',
         severity: params.status === 'verified' ? 'info' : 'warning',
         targetType: 'Document',
@@ -208,8 +210,12 @@ export class VerificationService {
           method: params.method,
           failureReason: params.failureReason,
         },
-      });
+        }),
+      ]);
+      return;
     }
+
+    await verificationLog;
   }
 }
 

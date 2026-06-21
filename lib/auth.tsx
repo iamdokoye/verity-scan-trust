@@ -65,9 +65,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     tokenStore.clear();
-    await apiLogin(email, password);
-    const user = await apiGetMe();
-    setState({ status: "authenticated", user: user as AuthUser });
+    const data = await apiLogin(email, password);
+    setState({
+      status: "authenticated",
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        role: data.user.role,
+        institutionId: data.user.institutionId ?? undefined,
+      },
+    });
   }, []);
 
   const logout = useCallback(async () => {

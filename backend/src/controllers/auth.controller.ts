@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
 import { auditService } from '../services/audit.service';
+import { prisma } from '../config/prisma';
 import { AuthError } from '../utils/errors';
 import { sendSuccess } from '../utils/response';
 
@@ -10,6 +11,14 @@ export const authController = {
       const { email, password } = req.body;
       const data = await authService.login(email, password);
       if (!data.session) throw new AuthError('Invalid credentials');
+      const profile = await prisma.profile.findUnique({
+        where: { id: data.user.id },
+        select: {
+          role: true,
+          institutionId: true,
+        },
+      });
+      if (!profile) throw new AuthError('User profile is not configured');
       await auditService.log({
         actorId: data.user?.id,
         action: 'USER_LOGIN',
@@ -20,7 +29,12 @@ export const authController = {
       sendSuccess(res, {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
-        user: data.user,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          role: profile.role,
+          institutionId: profile.institutionId,
+        },
       });
     } catch (err) {
       next(err);

@@ -16,19 +16,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
-
-type VerifyStatus =
-  | "verified"
-  | "tampered"
-  | "invalid_signature"
-  | "superseded"
-  | "revoked"
-  | "not_found";
-
-type VerifyResponse = {
-  status: VerifyStatus;
-  reason?: string | null;
-};
+import {
+  cacheVerifyResult,
+  type VerifyResult,
+  type VerifyStatus,
+} from "@/lib/verify-cache";
 
 function statusToPath(
   status: VerifyStatus
@@ -70,10 +62,11 @@ export default function VerifyHome() {
     if (!t) return;
     setLoading(true);
     try {
-      const result = await api.get<VerifyResponse>(
+      const result = await api.get<VerifyResult>(
         `/verify?token=${encodeURIComponent(t)}`,
         { noAuth: true }
       );
+      cacheVerifyResult(t, result);
       const reason = result.reason
         ? `&reason=${encodeURIComponent(result.reason)}`
         : "";
