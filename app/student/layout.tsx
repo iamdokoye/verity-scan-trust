@@ -17,8 +17,14 @@ export default function StudentLayout({
   useEffect(() => {
     if (state.status === "unauthenticated") {
       router.replace("/login");
+      return;
     }
-  }, [state.status, router]);
+    if (state.status === "authenticated" && state.user.role !== "student") {
+      router.replace(
+        state.user.role === "super_admin" ? "/super-admin" : "/admin"
+      );
+    }
+  }, [state, router]);
 
   if (state.status === "loading") {
     return (
@@ -29,6 +35,8 @@ export default function StudentLayout({
   }
 
   if (state.status === "unauthenticated") return null;
+  if (state.status === "authenticated" && state.user.role !== "student")
+    return null;
 
   return (
     <PortalShell
