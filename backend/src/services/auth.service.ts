@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { prisma } from '../config/prisma';
 import { AuthError } from '../utils/errors';
 
 export class AuthService {
@@ -32,6 +33,20 @@ export class AuthService {
       },
     });
     if (error || !data.user) throw new AuthError(error?.message ?? 'Signup failed');
+
+    // The custom access token hook reads public.profiles, not Supabase's
+    // user_metadata — without this row every subsequent request 401s with
+    // "Invalid token claims" because no role/institution can be resolved.
+    await prisma.profile.create({
+      data: {
+        id:            data.user.id,
+        institutionId,
+        role:          'student',
+        fullName:      fullName,
+        email,
+      },
+    });
+
     return data;
   }
 

@@ -13,6 +13,9 @@ const supabase = createClient(
 const ADMIN_EMAIL    = 'admin@votta.demo';
 const ADMIN_PASSWORD = 'VottaDemo2024!';
 
+const STUDENT_EMAIL    = 'student@votta.demo';
+const STUDENT_PASSWORD = 'VottaDemo2024!';
+
 async function main() {
   console.log('🌱 Seeding Votta demo data...\n');
 
@@ -80,6 +83,57 @@ async function main() {
     },
   });
   console.log('✓ Admin profile linked\n');
+
+  // ── 3b. Demo student Supabase auth user ─────────────────────────────────────
+  let studentUserId: string;
+
+  const { data: studentCreateData, error: studentCreateError } =
+    await supabase.auth.admin.createUser({
+      email:         STUDENT_EMAIL,
+      password:      STUDENT_PASSWORD,
+      email_confirm: true,
+    });
+
+  if (studentCreateError) {
+    const { data: listData } = await supabase.auth.admin.listUsers();
+    const existing = listData?.users.find((u) => u.email === STUDENT_EMAIL);
+    if (!existing) {
+      throw new Error(`Could not create or find student user: ${studentCreateError.message}`);
+    }
+    studentUserId = existing.id;
+    const { error: updateError } = await supabase.auth.admin.updateUserById(studentUserId, {
+      password: STUDENT_PASSWORD,
+      email_confirm: true,
+      user_metadata: {
+        role: 'student',
+        institution_id: institution.id,
+        full_name: 'Ada Okonkwo',
+      },
+    });
+    if (updateError) throw new Error(`Could not reset student user: ${updateError.message}`);
+    console.log('✓ Student user (existing):', STUDENT_EMAIL);
+  } else {
+    studentUserId = studentCreateData.user!.id;
+    console.log('✓ Student user (created):', STUDENT_EMAIL, '/ password:', STUDENT_PASSWORD);
+  }
+
+  await prisma.profile.upsert({
+    where:  { id: studentUserId },
+    update: {
+      institutionId: institution.id,
+      role:          'student',
+      fullName:      'Ada Okonkwo',
+      email:         STUDENT_EMAIL,
+    },
+    create: {
+      id:            studentUserId,
+      institutionId: institution.id,
+      role:          'student',
+      fullName:      'Ada Okonkwo',
+      email:         STUDENT_EMAIL,
+    },
+  });
+  console.log('✓ Student profile linked\n');
 
   // ── 4. Faculties ────────────────────────────────────────────────────────────
   const facultyDefs = [
@@ -194,6 +248,7 @@ async function main() {
 
   const studentIds: string[] = [];
   for (const s of studentDefs) {
+    const isDemoLogin = s.matric === 'CSC/2020/001';
     const student = await prisma.student.upsert({
       where: {
         institutionId_matricNumber: {
@@ -201,7 +256,7 @@ async function main() {
           matricNumber:  s.matric,
         },
       },
-      update: {},
+      update: isDemoLogin ? { profileId: studentUserId } : {},
       create: {
         institutionId:  institution.id,
         departmentId:   departments[s.dept],
@@ -211,11 +266,12 @@ async function main() {
         admissionYear:  parseInt(s.matric.split('/')[1]),
         graduationYear: parseInt(s.matric.split('/')[1]) + 4,
         createdBy:      adminUserId,
+        profileId:      isDemoLogin ? studentUserId : undefined,
       },
     });
     studentIds.push(student.id);
   }
-  console.log(`✓ ${studentDefs.length} students\n`);
+  console.log(`✓ ${studentDefs.length} students (demo login linked to CSC/2020/001)\n`);
 
   // ── 9. Results for first 3 CS students ─────────────────────────────────────
   // Seed enough results to demonstrate CGPA computation
@@ -266,8 +322,8 @@ async function main() {
   // ── Summary ─────────────────────────────────────────────────────────────────
   console.log('═══════════════════════════════════════════');
   console.log('Seed complete. Login credentials:');
-  console.log(`  Email:    ${ADMIN_EMAIL}`);
-  console.log(`  Password: ${ADMIN_PASSWORD}`);
+  console.log(`  Admin:    ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+  console.log(`  Student:  ${STUDENT_EMAIL} / ${STUDENT_PASSWORD} (Ada Okonkwo, CSC/2020/001)`);
   console.log('═══════════════════════════════════════════\n');
 }
 

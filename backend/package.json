@@ -11,6 +11,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "keys:generate": "tsx src/scripts/generateKeys.ts",
+    "backfill:profiles": "tsx src/scripts/backfillProfiles.ts",
     "test": "jest"
   },
   "dependencies": {
