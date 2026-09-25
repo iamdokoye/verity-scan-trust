@@ -41,8 +41,8 @@ export function PortalShell({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
-      <aside className="hidden w-60 flex-col bg-sidebar text-sidebar-foreground md:flex">
+    <div className="flex min-h-screen">
+      <aside className="glass-panel hidden w-60 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
           <Logo subtitle={subtitle} light />
         </div>
@@ -72,7 +72,7 @@ export function PortalShell({
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6">
+        <header className="glass-panel sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/70 px-6">
           <div className="md:hidden">
             <Logo subtitle={subtitle} />
           </div>
@@ -82,7 +82,7 @@ export function PortalShell({
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-muted"
+              className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-muted/50"
             >
               <div className="text-right leading-tight">
                 <div className="text-sm font-medium">{userName}</div>
@@ -100,13 +100,13 @@ export function PortalShell({
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </button>
             {menuOpen && onLogout && (
-              <div className="absolute right-0 top-full mt-1 w-40 rounded-md border border-border bg-background shadow-md">
+              <div className="glass-panel absolute right-0 top-full mt-1 w-40 rounded-md border border-border bg-popover">
                 <button
                   onClick={() => {
                     setMenuOpen(false);
                     onLogout();
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted/50"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out

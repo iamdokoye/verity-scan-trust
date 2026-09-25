@@ -52,9 +52,9 @@
   --background: oklch(1 0 0);
   --foreground: oklch(0.22 0.04 250);
 
-  --card: oklch(1 0 0);
+  --card: oklch(1 0 0 / 0.6);
   --card-foreground: oklch(0.22 0.04 250);
-  --popover: oklch(1 0 0);
+  --popover: oklch(1 0 0 / 0.8);
   --popover-foreground: oklch(0.22 0.04 250);
 
   /* Navy #1A3A5C */
@@ -83,18 +83,22 @@
   --warning: oklch(0.78 0.15 75);
   --warning-foreground: oklch(0.25 0.04 60);
 
-  --border: oklch(0.92 0.01 250);
-  --input: oklch(0.92 0.01 250);
+  --border: oklch(0.92 0.01 250 / 0.6);
+  --input: oklch(0.92 0.01 250 / 0.7);
   --ring: oklch(0.55 0.12 248);
 
-  --sidebar: oklch(0.34 0.06 250);
+  --sidebar: oklch(0.34 0.06 250 / 0.75);
   --sidebar-foreground: oklch(0.95 0.01 250);
-  --sidebar-primary: oklch(0.55 0.12 248);
+  --sidebar-primary: oklch(0.55 0.12 248 / 0.85);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.4 0.06 250);
+  --sidebar-accent: oklch(0.4 0.06 250 / 0.6);
   --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.4 0.06 250);
+  --sidebar-border: oklch(1 0 0 / 0.08);
   --sidebar-ring: oklch(0.55 0.12 248);
+
+  /* Glass surface used by cards, dialogs, menus, headers, sidebars */
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-shadow: 0 8px 32px oklch(0.34 0.06 250 / 0.12);
 }
 
 @layer base {
@@ -107,7 +111,24 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+  body {
+    background-image:
+      radial-gradient(at 15% 10%, oklch(0.55 0.12 248 / 0.16) 0px, transparent 55%),
+      radial-gradient(at 85% 0%, oklch(0.62 0.13 165 / 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 90%, oklch(0.34 0.06 250 / 0.14) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, oklch(0.78 0.15 75 / 0.08) 0px, transparent 45%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
   h1, h2, h3, h4 {
     letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow);
   }
 }
