@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+backend
+.git
+.claude
+Claude outputs
+20_CS_DS_021TR.py
+supabase
+*.log
+npm-debug.log*
+.DS_Store
+.env*
+!.env.example
