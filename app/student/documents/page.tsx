@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Download, QrCode, X, Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { PageTitle } from "@/components/votta/PortalShell";
 import {
   apiGetMyStudent,
@@ -41,8 +42,8 @@ function QrModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4"
       onClick={onClose}
     >
-      <div
-        className="w-full max-w-md rounded-lg bg-card p-6 shadow-xl"
+      <Card
+        className="w-full max-w-md p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between">
@@ -93,7 +94,7 @@ function QrModal({
         <Button className="mt-5 w-full" variant="outline" onClick={onClose}>
           Close
         </Button>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -180,9 +181,9 @@ export default function StudentDocuments() {
           {filtered.map((d) => {
             const isApproved = d.status === "approved";
             return (
-              <div
+              <Card
                 key={d.id}
-                className={`flex flex-col gap-4 rounded-lg border bg-card p-5 sm:flex-row sm:items-center ${
+                className={`flex flex-col gap-4 p-5 sm:flex-row sm:items-center ${
                   isApproved ? "border-l-4 border-l-success border-border" : "border-border"
                 }`}
               >
@@ -229,7 +230,7 @@ export default function StudentDocuments() {
                     <Download className="h-4 w-4" /> Download
                   </Button>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

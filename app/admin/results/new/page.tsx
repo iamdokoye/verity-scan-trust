@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   apiListStudents,
@@ -176,7 +177,7 @@ export default function EnterResults() {
       </p>
 
       {/* Step 1 */}
-      <div className="mb-6 rounded-lg border border-border bg-card p-6">
+      <Card className="mb-6 p-6">
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-secondary">
           Step 1 — Student &amp; Session
         </div>
@@ -199,7 +200,7 @@ export default function EnterResults() {
               <Loader2 className="absolute right-3 top-9 h-4 w-4 animate-spin text-muted-foreground" />
             )}
             {showStudentDrop && students.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+              <div className="glass-panel absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
                 {students.map((s) => (
                   <button
                     key={s.id}
@@ -248,10 +249,10 @@ export default function EnterResults() {
             )}
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Step 2 */}
-      <div className="rounded-lg border border-border bg-card p-6">
+      <Card className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-secondary">
@@ -381,7 +382,7 @@ export default function EnterResults() {
             "Save Results"
           )}
         </Button>
-      </div>
+      </Card>
     </form>
   );
 }

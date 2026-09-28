@@ -8,6 +8,18 @@ import { ConflictError, NotFoundError, SecurityError } from '../utils/errors';
 import { DocumentType } from '@prisma/client';
 import { env } from '../config/env';
 
+async function generateUniqueVerificationToken(): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const token = cryptoService.generateVerificationToken();
+    const existing = await prisma.document.findUnique({
+      where: { verificationToken: token },
+      select: { id: true },
+    });
+    if (!existing) return token;
+  }
+  throw new Error('Could not generate a unique verification token');
+}
+
 export class DocumentService {
   async uploadDocument(params: {
     studentId: string;
@@ -196,7 +208,7 @@ export class DocumentService {
     if (!document.sha256Hash) throw new SecurityError('Document is missing hash');
 
     const signature = cryptoService.signHash(document.sha256Hash);
-    const verificationToken = cryptoService.generateVerificationToken();
+    const verificationToken = await generateUniqueVerificationToken();
     const verificationUrl = `${env.FRONTEND_URL}/verify?token=${verificationToken}`;
     const qrCodeBase64 = await cryptoService.generateQRCode(verificationUrl);
 
@@ -314,7 +326,7 @@ export class DocumentService {
     );
 
     const newSignature = cryptoService.signHash(newHash);
-    const newToken = cryptoService.generateVerificationToken();
+    const newToken = await generateUniqueVerificationToken();
     const verificationUrl = `${env.FRONTEND_URL}/verify?token=${newToken}`;
     const newQR = await cryptoService.generateQRCode(verificationUrl);
 

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
+import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { getCachedVerifyResult, type VerifyResult } from "@/lib/verify-cache";
 
@@ -14,7 +15,7 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
-      <span className="text-sm font-medium text-foreground">{value}</span>
+      <span className="break-all text-sm font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -57,7 +58,7 @@ export function VerifiedResultContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-4 py-4">
+      <header className="glass-panel border-b border-border bg-card px-4 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Logo />
           <Link href="/" className="text-xs text-secondary hover:underline">
@@ -79,7 +80,7 @@ export function VerifiedResultContent() {
       </div>
 
       <main className="mx-auto max-w-3xl px-4 py-8">
-        <div className="rounded-lg border border-border bg-card p-6">
+        <Card className="p-6">
           {d?.studentName && (
             <Row label="Student Name" value={d.studentName} />
           )}
@@ -112,7 +113,7 @@ export function VerifiedResultContent() {
               value={`${d.sha256Hash.slice(0, 16)}…`}
             />
           )}
-        </div>
+        </Card>
 
         <p className="mt-4 rounded-md bg-muted p-4 text-xs leading-relaxed text-muted-foreground">
           This document was verified against a cryptographic signature issued by{" "}

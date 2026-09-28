@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FileText, CalendarDays, ShieldCheck, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   apiGetMyStudent,
   apiGetStudentDocuments,
@@ -25,7 +26,7 @@ function Stat({
   loading?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <Card className="p-5">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
           <Icon className="h-5 w-5" />
@@ -41,7 +42,7 @@ function Stat({
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -77,7 +78,7 @@ export default function StudentDashboard() {
   return (
     <div>
       {/* Welcome card */}
-      <div className="mb-6 rounded-lg border border-border bg-card p-6">
+      <Card className="mb-6 p-6">
         {loading ? (
           <div className="h-7 w-48 animate-pulse rounded bg-muted" />
         ) : (
@@ -91,7 +92,7 @@ export default function StudentDashboard() {
             </p>
           </>
         )}
-      </div>
+      </Card>
 
       {/* Stat cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -116,7 +117,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Recent documents */}
-      <div className="rounded-lg border border-border bg-card">
+      <Card className="p-0">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h3 className="text-base font-semibold text-foreground">
             Recent Documents
@@ -163,7 +164,7 @@ export default function StudentDashboard() {
             ))}
           </ul>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

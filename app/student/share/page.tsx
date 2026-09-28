@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Share2, QrCode, Copy, Check, Loader2 } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   apiGetMyStudent,
   apiGetStudentDocuments,
@@ -27,7 +28,7 @@ function ShareCard({ doc }: { doc: VottaDocument }) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <Card className="p-5">
       <div className="text-sm font-semibold capitalize text-foreground">
         {doc.documentType.replace(/_/g, " ")}
       </div>
@@ -61,7 +62,7 @@ function ShareCard({ doc }: { doc: VottaDocument }) {
           {copied ? "Copied!" : "Copy link"}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 

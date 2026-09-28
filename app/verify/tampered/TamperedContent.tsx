@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
+import { Card } from "@/components/ui/card";
 
 export function TamperedContent() {
   const searchParams = useSearchParams();
@@ -19,7 +20,7 @@ export function TamperedContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-4 py-4">
+      <header className="glass-panel border-b border-border bg-card px-4 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Logo />
           <Link href="/" className="text-xs text-secondary hover:underline">
@@ -49,13 +50,13 @@ export function TamperedContent() {
           <span className="font-semibold">Do not accept this document.</span>
         </p>
 
-        <div className="rounded-lg border border-border bg-card p-6">
+        <Card className="p-6">
           {token && (
             <div className="flex flex-col gap-1 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs uppercase tracking-wider text-muted-foreground">
                 Verification Token
               </span>
-              <span className="font-mono text-sm text-foreground">{token}</span>
+              <span className="break-all font-mono text-sm text-foreground">{token}</span>
             </div>
           )}
           <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -66,7 +67,7 @@ export function TamperedContent() {
               {label}
             </span>
           </div>
-        </div>
+        </Card>
 
         <div className="mt-6 rounded-md border border-warning/40 bg-warning/15 p-4 text-sm text-foreground">
           If you believe this is an error, contact the issuing institution

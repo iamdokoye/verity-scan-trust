@@ -8,17 +8,30 @@ import {
   QrCode,
   Loader2,
   ArrowLeft,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   apiGetStudent,
   apiGetStudentDocuments,
   apiGetStudentResults,
   apiGetDocumentDownloadUrl,
+  apiSimulateTamper,
   type AcademicSummary,
   type StudentDetail,
   type VottaDocument,
 } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const TABS = ["Overview", "Results", "Documents"] as const;
 
@@ -87,6 +100,8 @@ export default function StudentProfile({
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [expandedHash, setExpandedHash] = useState<string | null>(null);
   const [expandedSession, setExpandedSession] = useState<Record<number, boolean>>({ 0: true });
+  const [tamperTarget, setTamperTarget] = useState<VottaDocument | null>(null);
+  const [tamperLoading, setTamperLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -132,6 +147,25 @@ export default function StudentProfile({
     }
   }
 
+  async function handleTamper() {
+    if (!tamperTarget) return;
+    setTamperLoading(true);
+    try {
+      await apiSimulateTamper(tamperTarget.id);
+      // Mark the doc visually as tampered without a full reload
+      setDocs((prev) =>
+        prev.map((d) =>
+          d.id === tamperTarget.id ? { ...d, status: "tampered" as VottaDocument["status"] } : d
+        )
+      );
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Tamper simulation failed.");
+    } finally {
+      setTamperLoading(false);
+      setTamperTarget(null);
+    }
+  }
+
   // Loading / error states
   if (loadingStudent) {
     return (
@@ -165,7 +199,7 @@ export default function StudentProfile({
       </button>
 
       {/* Profile header */}
-      <div className="mb-6 flex flex-col gap-5 rounded-lg border border-border bg-card p-6 sm:flex-row sm:items-center">
+      <Card className="mb-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
         <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
           {initials(student.fullName)}
         </div>
@@ -202,7 +236,7 @@ export default function StudentProfile({
             </>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Tabs */}
       <div className="mb-6 flex gap-1 border-b border-border">
@@ -223,7 +257,7 @@ export default function StudentProfile({
 
       {/* Overview */}
       {tab === "Overview" && (
-        <div className="rounded-lg border border-border bg-card p-6">
+        <Card className="p-6">
           <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
             {(
               [
@@ -245,7 +279,7 @@ export default function StudentProfile({
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Results */}
@@ -269,9 +303,9 @@ export default function StudentProfile({
               {results.sessions.map((session, index) => {
                 const isOpen = !!expandedSession[index];
                 return (
-                  <div
+                  <Card
                     key={`${session.sessionLabel}-${session.semester}`}
-                    className="overflow-hidden rounded-lg border border-border bg-card"
+                    className="overflow-hidden p-0"
                   >
                     <button
                       onClick={() =>
@@ -340,13 +374,49 @@ export default function StudentProfile({
                         </table>
                       </div>
                     )}
-                  </div>
+                  </Card>
                 );
               })}
             </div>
           )}
         </div>
       )}
+
+      {/* Tamper simulation confirmation */}
+      <AlertDialog open={!!tamperTarget} onOpenChange={(open) => !open && setTamperTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Simulate Tampering — Demo Only</AlertDialogTitle>
+            <AlertDialogDescription>
+              This corrupts the stored SHA-256 hash for{" "}
+              <span className="font-medium text-foreground">
+                {tamperTarget?.fileName}
+              </span>
+              . The next verification of this document will return{" "}
+              <span className="font-semibold text-destructive">Tampered</span>.
+              <br />
+              <br />
+              This action is logged in the audit trail and is for demonstration
+              purposes only.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={tamperLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={handleTamper}
+              disabled={tamperLoading}
+            >
+              {tamperLoading ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Zap className="mr-1.5 h-4 w-4" />
+              )}
+              Simulate Tamper
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Documents */}
       {tab === "Documents" && (
@@ -365,7 +435,7 @@ export default function StudentProfile({
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <Card className="overflow-hidden p-0">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -433,13 +503,24 @@ export default function StudentProfile({
                           >
                             <Download className="h-4 w-4" />
                           </Button>
+                          {d.status === "approved" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-amber-600 hover:border-amber-500 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/30"
+                              onClick={() => setTamperTarget(d)}
+                              title="Demo: simulate tampering"
+                            >
+                              <Zap className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Card>
           )}
         </div>
       )}

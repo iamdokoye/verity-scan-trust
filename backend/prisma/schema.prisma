@@ -79,6 +79,7 @@ enum AuditAction {
   INSTITUTION_REACTIVATED
   INSTITUTION_DELETED
   ADMIN_PROVISIONED
+  TAMPER_SIMULATION
 
   @@map("audit_action")
 }
@@ -268,7 +269,7 @@ model Document {
   signature  String?
   signedAt   DateTime? @map("signed_at")
 
-  verificationToken String? @unique @map("verification_token") @db.Char(64)
+  verificationToken String? @unique @map("verification_token") @db.VarChar(8)
   qrCodeBase64      String? @map("qr_code_base64")
 
   declaredDegreeClass    String? @map("declared_degree_class") @db.VarChar(50)
@@ -336,4 +337,19 @@ model AuditLog {
 
   @@index([actorId, createdAt])
   @@map("audit_logs")
+}
+
+model AuditLogCheckpoint {
+  id               String   @id @default(uuid())
+  // Hash of all audit log entries in this batch (IDs + timestamps + actions)
+  batchHash        String   @map("batch_hash") @db.VarChar(64)
+  // SHA-256 of (previousCumulativeHash + batchHash) — chain of custody
+  cumulativeHash   String   @map("cumulative_hash") @db.VarChar(64)
+  // Inclusive range of entries covered by this checkpoint
+  fromEntryId      String   @map("from_entry_id")
+  toEntryId        String   @map("to_entry_id")
+  entryCount       Int      @map("entry_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("audit_log_checkpoints")
 }

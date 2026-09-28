@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, UserPlus } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   apiCreateStudent,
@@ -371,7 +372,7 @@ export default function StudentsList() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Card className="overflow-hidden p-0">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -429,7 +430,7 @@ export default function StudentsList() {
             {students.length} student{students.length !== 1 ? "s" : ""}
             {query && ` matching "${query}"`}
           </div>
-        </div>
+        </Card>
       )}
 
       <AddStudentDialog

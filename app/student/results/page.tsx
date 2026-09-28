@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, FileDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { PageTitle } from "@/components/votta/PortalShell";
 import {
   apiGetMyStudent,
@@ -55,7 +56,7 @@ export default function ResultsPage() {
       ) : (
         <>
           {/* CGPA banner */}
-          <div className="mb-6 flex flex-col items-start gap-4 rounded-lg border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="mb-6 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground">
                 Cumulative GPA
@@ -69,7 +70,7 @@ export default function ResultsPage() {
                 {summary.degreeClass}
               </span>
             )}
-          </div>
+          </Card>
 
           {(!summary || summary.sessions.length === 0) ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
@@ -93,9 +94,9 @@ export default function ResultsPage() {
                   0
                 );
                 return (
-                  <div
+                  <Card
                     key={i}
-                    className="overflow-hidden rounded-lg border border-border bg-card"
+                    className="overflow-hidden p-0"
                   >
                     <button
                       onClick={() =>
@@ -201,7 +202,7 @@ export default function ResultsPage() {
                         </table>
                       </div>
                     )}
-                  </div>
+                  </Card>
                 );
               })}
             </div>

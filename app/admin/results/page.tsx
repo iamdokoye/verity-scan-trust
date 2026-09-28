@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, Loader2, Plus } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { apiListSessions, type AcademicSession } from "@/lib/api";
 
 export default function ResultsAdmin() {
@@ -52,9 +53,9 @@ export default function ResultsAdmin() {
       ) : (
         <div className="space-y-3">
           {sessions.map((session) => (
-            <div
+            <Card
               key={session.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-card px-5 py-4"
+              className="flex items-center justify-between px-5 py-4"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
@@ -72,7 +73,7 @@ export default function ResultsAdmin() {
               <Button asChild variant="outline" size="sm">
                 <Link href="/admin/results/new">Enter results</Link>
               </Button>
-            </div>
+            </Card>
           ))}
         </div>
       )}

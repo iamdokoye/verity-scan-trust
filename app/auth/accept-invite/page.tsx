@@ -6,6 +6,7 @@ import { getSupabaseBrowser } from "@/lib/supabase-client";
 import { apiLogin } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, Loader2 } from "lucide-react";
 
@@ -284,7 +285,7 @@ export default function AcceptInvitePage() {
             Set your password
           </h1>
         </div>
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <Card className="p-6 shadow-sm">
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-12">
@@ -294,7 +295,7 @@ export default function AcceptInvitePage() {
           >
             <AcceptInviteInner />
           </Suspense>
-        </div>
+        </Card>
       </div>
     </div>
   );

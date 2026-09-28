@@ -149,7 +149,7 @@ export default function UploadDoc() {
         Upload, hash and digitally sign a student document.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-border bg-card p-6">
+      <form onSubmit={handleSubmit} className="glass-panel space-y-6 rounded-lg border border-border bg-card p-6">
         {/* Student picker */}
         <div className="relative" ref={dropdownRef}>
           <label className="mb-2 block text-sm font-medium text-foreground">
@@ -168,7 +168,7 @@ export default function UploadDoc() {
             <Loader2 className="absolute right-3 top-9 h-4 w-4 animate-spin text-muted-foreground" />
           )}
           {showDropdown && students.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+            <div className="glass-panel absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
               {students.map((s) => (
                 <button
                   key={s.id}
@@ -185,7 +185,7 @@ export default function UploadDoc() {
             </div>
           )}
           {showDropdown && students.length === 0 && !searchLoading && (
-            <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-lg">
+            <div className="glass-panel absolute z-10 mt-1 w-full rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-lg">
               No students found for &quot;{query}&quot;
             </div>
           )}

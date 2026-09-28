@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { apiGetAdminStats, type AdminStats } from "@/lib/api";
+import { Card } from "@/components/ui/card";
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <Card className="p-5">
       <div className="flex items-start justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
           <Icon className="h-5 w-5" />
@@ -51,7 +52,7 @@ function StatCard({
       <div className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -116,7 +117,7 @@ export default function AdminDash() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent activity */}
-        <div className="rounded-lg border border-border bg-card">
+        <Card className="p-0">
           <div className="border-b border-border px-5 py-4">
             <h3 className="text-base font-semibold text-foreground">
               Recent Activity
@@ -156,10 +157,10 @@ export default function AdminDash() {
               ))}
             </ul>
           )}
-        </div>
+        </Card>
 
         {/* Quick actions */}
-        <div className="rounded-lg border border-border bg-card p-5">
+        <Card className="p-5">
           <h3 className="mb-4 text-base font-semibold text-foreground">
             Quick Actions
           </h3>
@@ -177,7 +178,7 @@ export default function AdminDash() {
               </Link>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

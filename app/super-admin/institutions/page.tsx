@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -471,7 +472,7 @@ export default function InstitutionsPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-lg border border-border bg-card">
+      <Card className="p-0">
         {loading ? (
           <div className="divide-y divide-border">
             {[...Array(5)].map((_, i) => (
@@ -625,7 +626,7 @@ export default function InstitutionsPage() {
             </TableBody>
           </Table>
         ) : null}
-      </div>
+      </Card>
 
       {/* Dialogs */}
       <InstitutionDialog

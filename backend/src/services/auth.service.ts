@@ -1,16 +1,16 @@
-import { supabase } from '../config/supabase';
+import { supabase, createUserAuthClient } from '../config/supabase';
 import { prisma } from '../config/prisma';
 import { AuthError } from '../utils/errors';
 
 export class AuthService {
   async login(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await createUserAuthClient().auth.signInWithPassword({ email, password });
     if (error || !data.session) throw new AuthError(error?.message ?? 'Invalid credentials');
     return data;
   }
 
   async refresh(refreshToken: string) {
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+    const { data, error } = await createUserAuthClient().auth.refreshSession({ refresh_token: refreshToken });
     if (error || !data.session) throw new AuthError(error?.message ?? 'Could not refresh');
     return data;
   }
@@ -21,7 +21,7 @@ export class AuthService {
     fullName: string,
     institutionId: string,
   ) {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await createUserAuthClient().auth.signUp({
       email,
       password,
       options: {

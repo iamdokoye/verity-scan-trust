@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/votta/Logo";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -65,7 +66,7 @@ export default function SignupPage() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center">
           <Logo />
-          <div className="mt-8 rounded-lg border border-border bg-card p-6">
+          <Card className="mt-8 p-6">
             <div className="mb-2 text-2xl">✉️</div>
             <h2 className="text-base font-semibold text-foreground">
               Check your email
@@ -77,7 +78,7 @@ export default function SignupPage() {
             <Link href="/login">
               <Button className="mt-6 w-full">Go to sign in</Button>
             </Link>
-          </div>
+          </Card>
         </div>
       </div>
     );

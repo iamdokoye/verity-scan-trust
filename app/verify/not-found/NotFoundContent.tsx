@@ -73,7 +73,7 @@ export function NotFoundContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-4 py-4">
+      <header className="glass-panel border-b border-border bg-card px-4 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Logo />
           <Link href="/" className="text-xs text-secondary hover:underline">

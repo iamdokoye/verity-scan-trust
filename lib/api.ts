@@ -512,6 +512,14 @@ export async function apiGetDocumentDownloadUrl(
   );
 }
 
+export async function apiSimulateTamper(
+  documentId: string
+): Promise<{ message: string; documentId: string }> {
+  return api.patch<{ message: string; documentId: string }>(
+    `/admin/tamper/${documentId}`
+  );
+}
+
 // ── Admin stats ───────────────────────────────────────────────────────────────
 
 export type AdminStats = {

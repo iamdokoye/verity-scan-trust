@@ -4,6 +4,7 @@ import { requireRole } from '../middleware/rbac.middleware';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { auditService } from '../services/audit.service';
+import { auditCheckpointService } from '../services/auditCheckpoint.service';
 import { NotFoundError } from '../utils/errors';
 
 const router = Router();
@@ -26,10 +27,10 @@ router.get('/stats', async (req, res, next) => {
       prisma.student.count({ where: { institutionId } }),
       prisma.document.count({ where: { institutionId } }),
       prisma.document.count({ where: { institutionId, status: 'pending_approval' } }),
-      prisma.auditLog.count({
+      prisma.verificationLog.count({
         where: {
-          action: 'VERIFICATION_PERFORMED',
-          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          document: { institutionId },
+          verifiedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
         },
       }),
     ]);
@@ -95,12 +96,12 @@ router.patch('/tamper/:documentId', async (req, res, next) => {
     await auditService.log({
       actorId:    req.user!.id,
       actorRole:  req.user!.role,
-      action:     'VERIFICATION_PERFORMED',
+      action:     'TAMPER_SIMULATION',
       severity:   'critical',
       targetType: 'Document',
       targetId:   document.id,
       ipAddress:  req.ip,
-      metadata:   { demoTamper: true, originalHash: document.sha256Hash },
+      metadata:   { originalHash: document.sha256Hash },
     });
 
     sendSuccess(res, {
@@ -108,6 +109,49 @@ router.patch('/tamper/:documentId', async (req, res, next) => {
       documentId: document.id,
       hint: `Re-verify with token to see status: "tampered"`,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/v1/admin/audit/checkpoint
+ * Creates a cumulative hash checkpoint over all audit log entries since the
+ * last checkpoint. The chain of checkpoint hashes enables detection of any
+ * retroactive tampering with the audit log even if rows were somehow deleted
+ * at the storage layer.
+ */
+router.post('/audit/checkpoint', async (req, res, next) => {
+  try {
+    const checkpoint = await auditCheckpointService.createCheckpoint();
+    sendSuccess(res, checkpoint, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/v1/admin/audit/checkpoints
+ * Returns the 50 most recent checkpoints.
+ */
+router.get('/audit/checkpoints', async (_req, res, next) => {
+  try {
+    const checkpoints = await auditCheckpointService.listCheckpoints();
+    sendSuccess(res, checkpoints);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/v1/admin/audit/checkpoints/verify
+ * Re-derives the cumulative hash chain and confirms no checkpoint has been
+ * tampered with. Returns { valid: true } or { valid: false, brokenAt: id }.
+ */
+router.get('/audit/checkpoints/verify', async (_req, res, next) => {
+  try {
+    const result = await auditCheckpointService.verifyChain();
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

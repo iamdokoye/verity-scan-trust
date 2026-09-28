@@ -4,9 +4,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Html5Qrcode } from "html5-qrcode";
-import { QrCode, Camera, Loader2 } from "lucide-react";
+import {
+  QrCode,
+  Camera,
+  Loader2,
+  ShieldCheck,
+  Lock,
+  Building2,
+  GraduationCap,
+  UploadCloud,
+  FileCheck2,
+  ScanLine,
+  ArrowRight,
+} from "lucide-react";
 import { Logo } from "@/components/votta/Logo";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -167,21 +180,27 @@ export default function VerifyHome() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-3xl">
-          <div className="mb-10 flex flex-col items-center text-center">
-            <Logo />
-            <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Verify any academic credential instantly.
-            </h1>
-            <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-              Scan a QR code from a Votta-issued document, or enter the
-              verification token printed on it.
-            </p>
+      <main className="flex-1">
+        {/* ── Hero ── */}
+        <section className="mx-auto w-full max-w-3xl px-4 pb-10 pt-16 text-center sm:pt-20">
+          <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-secondary">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Institution-issued, cryptographically signed
           </div>
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            Verify any academic credential in seconds.
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
+            Every Votta document is hashed, digitally signed by the issuing
+            institution, and checked live — no account, no waiting, no
+            benefit of the doubt.
+          </p>
+        </section>
 
+        {/* ── Verify widget ── */}
+        <section className="mx-auto w-full max-w-3xl px-4 pb-16">
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-border bg-card p-6">
+            <Card className="p-6">
               <div className="mb-3 text-sm font-medium text-foreground">
                 Scan QR Code
               </div>
@@ -203,9 +222,9 @@ export default function VerifyHome() {
                   <QrCode className="h-4 w-4" /> Open scanner
                 </Button>
               </div>
-            </div>
+            </Card>
 
-            <div className="rounded-lg border border-border bg-card p-6">
+            <Card className="p-6">
               <div className="mb-3 text-sm font-medium text-foreground">
                 Enter Verification Token
               </div>
@@ -213,7 +232,7 @@ export default function VerifyHome() {
                 Verification token
               </label>
               <Input
-                placeholder="e.g. VTA-7K3M-9P2Q-XR4N"
+                placeholder="e.g. 7K3M9P2Q"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 className="font-mono"
@@ -249,7 +268,7 @@ export default function VerifyHome() {
                   not found
                 </Link>
               </div>
-            </div>
+            </Card>
           </div>
 
           <div className="mt-8 flex items-center gap-4">
@@ -269,9 +288,126 @@ export default function VerifyHome() {
               Administration
             </Link>
           </p>
-        </div>
+        </section>
+
+        {/* ── Trust strip ── */}
+        <section className="border-y border-border bg-muted/30 py-12">
+          <div className="mx-auto grid max-w-4xl gap-8 px-4 text-center sm:grid-cols-3">
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div className="text-sm font-semibold text-foreground">
+                SHA-256 + RSA signed
+              </div>
+              <p className="max-w-[220px] text-xs text-muted-foreground">
+                Every document is hashed and signed at the point of issue —
+                any edit invalidates the signature.
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+                <ScanLine className="h-5 w-5" />
+              </div>
+              <div className="text-sm font-semibold text-foreground">
+                Instant, public verification
+              </div>
+              <p className="max-w-[220px] text-xs text-muted-foreground">
+                Anyone can check a document&apos;s authenticity in seconds —
+                no account or approval required.
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div className="text-sm font-semibold text-foreground">
+                Issued by the institution
+              </div>
+              <p className="max-w-[220px] text-xs text-muted-foreground">
+                Records come straight from the awarding institution, not a
+                third party or the student.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── How it works ── */}
+        <section className="mx-auto w-full max-w-4xl px-4 py-16">
+          <div className="mb-10 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              How verification works
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              From issuance to verification, in three steps.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {[
+              {
+                icon: UploadCloud,
+                step: "1",
+                title: "Institution issues the document",
+                body: "The registrar uploads a transcript or certificate, which Votta hashes and signs with the institution's private key.",
+              },
+              {
+                icon: FileCheck2,
+                step: "2",
+                title: "A QR code and token are embedded",
+                body: "Each signed document gets a unique verification token and QR code tied to its exact content.",
+              },
+              {
+                icon: ShieldCheck,
+                step: "3",
+                title: "Anyone can verify instantly",
+                body: "Scan the code or enter the token here to confirm the document is genuine and unaltered — publicly, with no login.",
+              },
+            ].map(({ icon: Icon, step, title, body }) => (
+              <Card key={step} className="p-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Step {step}
+                  </span>
+                </div>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {title}
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                  {body}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* ── CTA band ── */}
+        <section className="border-t border-border bg-primary py-14 text-primary-foreground">
+          <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/10">
+                <GraduationCap className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-base font-semibold">
+                  A student wanting access to your records?
+                </div>
+                <p className="mt-0.5 text-sm text-primary-foreground/80">
+                  Sign up to download, share and QR-share your approved documents.
+                </p>
+              </div>
+            </div>
+            <Link href="/signup" className="flex-shrink-0">
+              <Button variant="secondary" size="lg">
+                Create a student account <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </section>
       </main>
-      <footer className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground">
+      <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">
         Votta · Tamper-evident academic verification
       </footer>
       <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>

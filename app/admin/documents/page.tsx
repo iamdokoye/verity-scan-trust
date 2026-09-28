@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Upload,
@@ -239,7 +240,7 @@ export default function DocsAdmin() {
           <div className="mb-3 text-sm text-muted-foreground">
             {total} document{total !== 1 ? "s" : ""} awaiting review
           </div>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <Card className="overflow-hidden p-0">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
@@ -334,7 +335,7 @@ export default function DocsAdmin() {
                 })}
               </tbody>
             </table>
-          </div>
+          </Card>
 
           {/* Pagination */}
           {totalPages > 1 && (

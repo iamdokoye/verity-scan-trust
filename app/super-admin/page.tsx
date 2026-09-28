@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { apiGetPlatformStats, type PlatformStats } from "@/lib/api";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,7 +69,7 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <Card className="p-5">
       <div className="flex items-start justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
           <Icon className="h-5 w-5" />
@@ -89,7 +90,7 @@ function StatCard({
           <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -207,7 +208,7 @@ export default function SuperAdminDashboard() {
         {/* Left column: alerts + document breakdown */}
         <div className="space-y-6 lg:col-span-2">
           {/* Alerts */}
-          <div className="rounded-lg border border-border bg-card">
+          <Card className="p-0">
             <div className="flex items-center gap-2 border-b border-border px-5 py-4">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               <h3 className="text-sm font-semibold text-foreground">
@@ -247,10 +248,10 @@ export default function SuperAdminDashboard() {
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
 
           {/* Document status breakdown */}
-          <div className="rounded-lg border border-border bg-card p-5">
+          <Card className="p-5">
             <h3 className="mb-4 text-sm font-semibold text-foreground">
               Document Status
             </h3>
@@ -262,11 +263,11 @@ export default function SuperAdminDashboard() {
                 total={totalDocs}
               />
             )}
-          </div>
+          </Card>
         </div>
 
         {/* Right column: recent activity */}
-        <div className="rounded-lg border border-border bg-card lg:col-span-3">
+        <Card className="p-0 lg:col-span-3">
           <div className="flex items-center gap-2 border-b border-border px-5 py-4">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold text-foreground">
@@ -311,7 +312,7 @@ export default function SuperAdminDashboard() {
               ))}
             </ul>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

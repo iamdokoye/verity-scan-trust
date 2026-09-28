@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Lock, Loader2 } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiListAuditLogs, type AuditEntry } from "@/lib/api";
 
@@ -129,7 +130,7 @@ export default function AuditPage() {
         This log is append-only. Entries cannot be modified or deleted.
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <Card className="overflow-hidden p-0">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -218,7 +219,7 @@ export default function AuditPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

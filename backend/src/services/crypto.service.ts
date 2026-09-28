@@ -25,8 +25,19 @@ export class CryptoService {
     }
   }
 
+  /**
+   * Short, human-typeable code shown on documents and QR-linked for public
+   * verification. Excludes 0/O/1/I/L to avoid misreads. 32^8 (~1.1 trillion)
+   * combinations is ample given the unique DB constraint + retry-on-collision
+   * in document.service.ts.
+   */
   generateVerificationToken(): string {
-    return crypto.randomBytes(32).toString('hex');
+    const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    let token = '';
+    for (let i = 0; i < 8; i++) {
+      token += alphabet[crypto.randomInt(alphabet.length)];
+    }
+    return token;
   }
 
   async generateQRCode(verificationUrl: string): Promise<string> {

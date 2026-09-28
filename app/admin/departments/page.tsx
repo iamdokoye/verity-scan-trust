@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, Loader2, Plus } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   apiCreateDepartment,
@@ -245,7 +246,7 @@ export default function DepartmentsPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <Card className="overflow-hidden p-0">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -276,7 +277,7 @@ export default function DepartmentsPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
       <AddDepartmentDialog
