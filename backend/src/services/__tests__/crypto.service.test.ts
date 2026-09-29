@@ -102,10 +102,10 @@ describe('CryptoService', () => {
   // ── generateVerificationToken ─────────────────────────────────────────────
 
   describe('generateVerificationToken()', () => {
-    it('returns a 64-character hex string', () => {
+    it('returns an 8-character token from the unambiguous alphabet', () => {
       const token = service.generateVerificationToken();
-      expect(token).toHaveLength(64);
-      expect(token).toMatch(/^[0-9a-f]+$/);
+      expect(token).toHaveLength(8);
+      expect(token).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]+$/);
     });
 
     it('generates unique tokens on each call', () => {
