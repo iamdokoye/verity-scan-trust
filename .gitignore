@@ -42,3 +42,7 @@ config.toml
 *.njsproj
 *.sln
 *.sw?
+
+# Local, non-project files
+20_CS_DS_021TR.py
+Claude outputs/
