@@ -116,6 +116,47 @@ describe('verifyByToken() previewAvailable', () => {
   });
 });
 
+describe('rows written straight into the database', () => {
+  // A seed script or manual SQL can create a document row and a matching file
+  // and hash, but not a signature from the institution's private key.
+  it('never verify when the signature is missing', async () => {
+    findUnique.mockResolvedValue(doc({ signature: null }));
+    downloadFile.mockResolvedValue(FILE);
+    expect(await verify()).toMatchObject({ status: 'invalid_signature' });
+  });
+
+  it('never verify when the signature was made with a different key', async () => {
+    const other = require('crypto').generateKeyPairSync('rsa', { modulusLength: 2048 }); // eslint-disable-line @typescript-eslint/no-require-imports
+    const hash = cryptoService.hashFile(FILE);
+    const forged = require('crypto') // eslint-disable-line @typescript-eslint/no-require-imports
+      .createSign('sha256')
+      .update(Buffer.from(hash, 'hex'))
+      .sign(other.privateKey, 'base64');
+    findUnique.mockResolvedValue(doc({ signature: forged }));
+    downloadFile.mockResolvedValue(FILE);
+    expect(await verify()).toMatchObject({ status: 'invalid_signature' });
+  });
+
+  it('never verify when the file and the stored hash were both replaced (old signature no longer matches)', async () => {
+    const replaced = Buffer.from('%PDF-1.4 a different certificate');
+    findUnique.mockResolvedValue(doc({ sha256Hash: cryptoService.hashFile(replaced) }));
+    downloadFile.mockResolvedValue(replaced);
+    expect(await verify()).toMatchObject({ status: 'invalid_signature' });
+  });
+
+  it('report tampered when only the stored hash was changed', async () => {
+    findUnique.mockResolvedValue(doc({ sha256Hash: 'deadbeef' + 'a'.repeat(56) }));
+    downloadFile.mockResolvedValue(FILE);
+    expect(await verify()).toMatchObject({ status: 'tampered' });
+  });
+
+  it('do verify only with a genuine signature over the real file (the control case)', async () => {
+    findUnique.mockResolvedValue(doc());
+    downloadFile.mockResolvedValue(FILE);
+    expect(await verify()).toMatchObject({ status: 'verified' });
+  });
+});
+
 describe('getPreview()', () => {
   it('returns the stored file and its type for an approved document', async () => {
     findUnique.mockResolvedValue(doc());
