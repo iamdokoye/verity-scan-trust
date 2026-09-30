@@ -3,6 +3,7 @@
  * Prisma, storage and audit logging are mocked; crypto is real.
  */
 const { privateKey, publicKey } = (() => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const crypto = require('crypto');
   return crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,

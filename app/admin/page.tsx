@@ -27,7 +27,7 @@ const QUICK_ACTIONS = [
   { label: "Add student", icon: UserPlus, to: "/admin/students" },
   { label: "Upload document", icon: Upload, to: "/admin/documents/upload" },
   { label: "Enter results", icon: ClipboardList, to: "/admin/results/new" },
-  { label: "Generate transcript", icon: FileDown, to: "/admin/students" },
+  { label: "Transcript requests", icon: FileDown, to: "/admin/transcript-requests" },
 ];
 
 function activityIcon(action: string): { icon: LucideIcon; cls: string } {

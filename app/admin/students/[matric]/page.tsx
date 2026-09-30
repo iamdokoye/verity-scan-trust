@@ -8,8 +8,10 @@ import {
   QrCode,
   Loader2,
   ArrowLeft,
+  FileDown,
   Zap,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -17,6 +19,7 @@ import {
   apiGetStudentDocuments,
   apiGetStudentResults,
   apiGetDocumentDownloadUrl,
+  apiGenerateTranscript,
   apiSimulateTamper,
   type AcademicSummary,
   type StudentDetail,
@@ -102,6 +105,8 @@ export default function StudentProfile({
   const [expandedSession, setExpandedSession] = useState<Record<number, boolean>>({ 0: true });
   const [tamperTarget, setTamperTarget] = useState<VottaDocument | null>(null);
   const [tamperLoading, setTamperLoading] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -137,6 +142,23 @@ export default function StudentProfile({
       .catch(() => setResults(null))
       .finally(() => setLoadingResults(false));
   }, [tab, student, studentId]);
+
+  async function handleGenerateTranscript() {
+    setGenerating(true);
+    try {
+      await apiGenerateTranscript(studentId);
+      toast.success("Transcript issued", {
+        description: "It is signed, and the student's results are now locked.",
+      });
+      setTranscriptOpen(false);
+      setDocs(await apiGetStudentDocuments(studentId));
+      setTab("Documents");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Could not generate the transcript.");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function handleDownload(doc: VottaDocument) {
     try {
@@ -221,6 +243,10 @@ export default function StudentProfile({
             </div>
           )}
         </div>
+        <div className="flex flex-col items-start gap-3 sm:items-end">
+          <Button variant="hero" onClick={() => setTranscriptOpen(true)}>
+            <FileDown strokeWidth={1.75} /> Generate transcript
+          </Button>
         <div className="flex flex-col items-end gap-1 text-right">
           {student.cgpa != null && (
             <>
@@ -235,6 +261,7 @@ export default function StudentProfile({
               )}
             </>
           )}
+        </div>
         </div>
       </Card>
 
@@ -524,6 +551,31 @@ export default function StudentProfile({
           )}
         </div>
       )}
+
+      <AlertDialog open={transcriptOpen} onOpenChange={(o) => !generating && setTranscriptOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate a transcript for {student.fullName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This signs and issues an official transcript from the student&apos;s current results,
+              adds it to their documents with a verification QR code, and{" "}
+              <strong>locks their results</strong> against further edits.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={generating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleGenerateTranscript();
+              }}
+              disabled={generating}
+            >
+              {generating ? "Issuing…" : "Issue transcript"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

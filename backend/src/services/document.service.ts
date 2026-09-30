@@ -8,7 +8,7 @@ import { ConflictError, NotFoundError, SecurityError } from '../utils/errors';
 import { DocumentType } from '@prisma/client';
 import { env } from '../config/env';
 
-async function generateUniqueVerificationToken(): Promise<string> {
+export async function generateUniqueVerificationToken(): Promise<string> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const token = cryptoService.generateVerificationToken();
     const existing = await prisma.document.findUnique({

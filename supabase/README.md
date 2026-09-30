@@ -11,7 +11,9 @@ supabase/
     ├── 20240101000001_custom_access_token_hook.sql     # JWT claims injection (CRITICAL)
     ├── 20240101000002_append_only_audit_log.sql        # Audit log tamper protection
     ├── 20240101000003_rls_policies.sql                 # Row Level Security
-    └── 20240101000004_tamper_simulation.sql            # Demo tamper helper
+    ├── 20240101000004_tamper_simulation.sql            # Demo tamper helper
+    ├── 20240101000005_transcript_audit_actions.sql     # Audit actions for transcript requests (run first)
+    └── 20240101000006_transcript_requests.sql          # transcript_requests table (student requests, admin approves)
 ```
 
 ## Deployment order

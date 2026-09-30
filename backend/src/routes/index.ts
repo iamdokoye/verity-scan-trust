@@ -12,6 +12,7 @@ import documentRoutes from './documents.routes';
 import verifyRoutes from './verify.routes';
 import auditRoutes from './audit.routes';
 import adminRoutes from './admin.routes';
+import transcriptRequestRoutes from './transcriptRequests.routes';
 
 export const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/sessions', sessionRoutes);
 router.use('/courses', courseRoutes);
 router.use('/results', resultRoutes);
 router.use('/documents', documentRoutes);
+router.use('/transcript-requests', transcriptRequestRoutes);
 router.use('/verify', verifyRoutes);
 router.use('/audit', auditRoutes);
 router.use('/audit-logs', auditRoutes);

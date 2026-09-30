@@ -69,6 +69,9 @@ enum AuditAction {
   CORRECTION_APPROVED
   CORRECTION_REJECTED
   TRANSCRIPT_GENERATED
+  TRANSCRIPT_REQUESTED
+  TRANSCRIPT_REQUEST_APPROVED
+  TRANSCRIPT_REQUEST_REJECTED
   VERIFICATION_PERFORMED
   CERTIFICATE_MISMATCH
   DUPLICATE_HASH_DETECTED
@@ -82,6 +85,14 @@ enum AuditAction {
   TAMPER_SIMULATION
 
   @@map("audit_action")
+}
+
+enum TranscriptRequestStatus {
+  pending
+  approved
+  rejected
+
+  @@map("transcript_request_status")
 }
 
 enum AuditSeverity {
@@ -103,12 +114,13 @@ model Institution {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  profiles    Profile[]
-  faculties   Faculty[]
-  departments Department[]
-  students    Student[]
-  sessions    AcademicSession[]
-  documents   Document[]
+  profiles           Profile[]
+  faculties          Faculty[]
+  departments        Department[]
+  students           Student[]
+  sessions           AcademicSession[]
+  documents          Document[]
+  transcriptRequests TranscriptRequest[]
 
   @@map("institutions")
 }
@@ -122,13 +134,14 @@ model Profile {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  institution     Institution? @relation(fields: [institutionId], references: [id])
-  student         Student?    @relation("StudentProfile")
-  uploadedDocs    Document[]  @relation("UploadedBy")
-  approvedDocs    Document[]  @relation("ApprovedBy")
-  revokedDocs     Document[]  @relation("RevokedBy")
-  uploadedResults Result[]
-  auditLogs       AuditLog[]
+  institution               Institution?        @relation(fields: [institutionId], references: [id])
+  student                   Student?            @relation("StudentProfile")
+  uploadedDocs              Document[]          @relation("UploadedBy")
+  approvedDocs              Document[]          @relation("ApprovedBy")
+  revokedDocs               Document[]          @relation("RevokedBy")
+  decidedTranscriptRequests TranscriptRequest[] @relation("TranscriptRequestDecidedBy")
+  uploadedResults           Result[]
+  auditLogs                 AuditLog[]
 
   @@map("profiles")
 }
@@ -141,7 +154,7 @@ model Faculty {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  institution Institution @relation(fields: [institutionId], references: [id])
+  institution Institution  @relation(fields: [institutionId], references: [id])
   departments Department[]
 
   @@unique([institutionId, name])
@@ -182,11 +195,12 @@ model Student {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  profile     Profile?    @relation("StudentProfile", fields: [profileId], references: [id])
-  institution Institution @relation(fields: [institutionId], references: [id])
-  department  Department  @relation(fields: [departmentId], references: [id])
-  results     Result[]
-  documents   Document[]
+  profile            Profile?            @relation("StudentProfile", fields: [profileId], references: [id])
+  institution        Institution         @relation(fields: [institutionId], references: [id])
+  department         Department          @relation(fields: [departmentId], references: [id])
+  results            Result[]
+  documents          Document[]
+  transcriptRequests TranscriptRequest[]
 
   @@unique([institutionId, matricNumber])
   @@index([institutionId])
@@ -292,12 +306,13 @@ model Document {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  student          Student           @relation(fields: [studentId], references: [id])
-  institution      Institution       @relation(fields: [institutionId], references: [id])
-  uploader         Profile           @relation("UploadedBy", fields: [uploadedBy], references: [id])
-  approver         Profile?          @relation("ApprovedBy", fields: [approvedBy], references: [id])
-  revoker          Profile?          @relation("RevokedBy", fields: [revokedBy], references: [id])
-  verificationLogs VerificationLog[]
+  student            Student             @relation(fields: [studentId], references: [id])
+  institution        Institution         @relation(fields: [institutionId], references: [id])
+  uploader           Profile             @relation("UploadedBy", fields: [uploadedBy], references: [id])
+  approver           Profile?            @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  revoker            Profile?            @relation("RevokedBy", fields: [revokedBy], references: [id])
+  verificationLogs   VerificationLog[]
+  transcriptRequests TranscriptRequest[]
 
   @@index([studentId, institutionId])
   @@index([institutionId, status])
@@ -340,16 +355,41 @@ model AuditLog {
 }
 
 model AuditLogCheckpoint {
-  id               String   @id @default(uuid())
+  id             String   @id @default(uuid())
   // Hash of all audit log entries in this batch (IDs + timestamps + actions)
-  batchHash        String   @map("batch_hash") @db.VarChar(64)
+  batchHash      String   @map("batch_hash") @db.VarChar(64)
   // SHA-256 of (previousCumulativeHash + batchHash) — chain of custody
-  cumulativeHash   String   @map("cumulative_hash") @db.VarChar(64)
+  cumulativeHash String   @map("cumulative_hash") @db.VarChar(64)
   // Inclusive range of entries covered by this checkpoint
-  fromEntryId      String   @map("from_entry_id")
-  toEntryId        String   @map("to_entry_id")
-  entryCount       Int      @map("entry_count")
-  createdAt        DateTime @default(now()) @map("created_at")
+  fromEntryId    String   @map("from_entry_id")
+  toEntryId      String   @map("to_entry_id")
+  entryCount     Int      @map("entry_count")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   @@map("audit_log_checkpoints")
+}
+
+model TranscriptRequest {
+  id            String                  @id @default(uuid())
+  studentId     String                  @map("student_id")
+  institutionId String                  @map("institution_id")
+  status        TranscriptRequestStatus @default(pending)
+  studentNote   String?                 @map("student_note")
+
+  decidedBy    String?   @map("decided_by")
+  decidedAt    DateTime? @map("decided_at")
+  decisionNote String?   @map("decision_note")
+  documentId   String?   @map("document_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  student     Student     @relation(fields: [studentId], references: [id])
+  institution Institution @relation(fields: [institutionId], references: [id])
+  decider     Profile?    @relation("TranscriptRequestDecidedBy", fields: [decidedBy], references: [id])
+  document    Document?   @relation(fields: [documentId], references: [id])
+
+  @@index([studentId])
+  @@index([institutionId, status])
+  @@map("transcript_requests")
 }

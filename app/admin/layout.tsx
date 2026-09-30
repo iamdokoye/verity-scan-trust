@@ -10,6 +10,7 @@ import {
   GraduationCap,
   FileText,
   ScrollText,
+  FileDown,
 } from "lucide-react";
 import { PortalShell } from "@/components/votta/PortalShell";
 import { useAuth } from "@/lib/auth";
@@ -59,6 +60,7 @@ export default function AdminLayout({
         { label: "Students", to: "/admin/students", icon: Users },
         { label: "Results", to: "/admin/results", icon: GraduationCap },
         { label: "Documents", to: "/admin/documents", icon: FileText },
+        { label: "Transcript requests", to: "/admin/transcript-requests", icon: FileDown },
         { label: "Audit Log", to: "/admin/audit", icon: ScrollText },
       ]}
     >

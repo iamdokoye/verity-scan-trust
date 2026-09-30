@@ -693,3 +693,58 @@ export async function apiGetVerifyPreview(token: string): Promise<Blob> {
   if (!res.ok) throw new ApiError(res.status, undefined, `HTTP ${res.status}`);
   return res.blob();
 }
+
+// ── Transcript requests ───────────────────────────────────────────────────────
+
+export type TranscriptRequestStatus = "pending" | "approved" | "rejected";
+
+export type TranscriptRequest = {
+  id: string;
+  studentId: string;
+  status: TranscriptRequestStatus;
+  studentNote: string | null;
+  decisionNote: string | null;
+  decidedAt: string | null;
+  documentId: string | null;
+  createdAt: string;
+  student?: { fullName: string; matricNumber: string };
+};
+
+/** Student: ask the registry for a signed transcript. */
+export async function apiRequestTranscript(note?: string): Promise<TranscriptRequest> {
+  return api.post<TranscriptRequest>("/transcript-requests", {
+    body: note?.trim() ? { note: note.trim() } : {},
+  });
+}
+
+/** Student: their own requests, newest first. */
+export async function apiListMyTranscriptRequests(): Promise<TranscriptRequest[]> {
+  return api.get<TranscriptRequest[]>("/transcript-requests/mine");
+}
+
+/** Admin: requests for their institution. */
+export async function apiListTranscriptRequests(
+  status?: TranscriptRequestStatus
+): Promise<TranscriptRequest[]> {
+  const qs = status ? `?status=${status}` : "";
+  return api.get<TranscriptRequest[]>(`/transcript-requests${qs}`);
+}
+
+/** Admin: approving issues (signs) the transcript. */
+export async function apiApproveTranscriptRequest(id: string): Promise<TranscriptRequest> {
+  return api.post<TranscriptRequest>(`/transcript-requests/${id}/approve`);
+}
+
+export async function apiRejectTranscriptRequest(
+  id: string,
+  note?: string
+): Promise<TranscriptRequest> {
+  return api.post<TranscriptRequest>(`/transcript-requests/${id}/reject`, {
+    body: note?.trim() ? { note: note.trim() } : {},
+  });
+}
+
+/** Admin: issue a transcript for a student directly. */
+export async function apiGenerateTranscript(studentId: string): Promise<VottaDocument> {
+  return api.post<VottaDocument>(`/documents/students/${studentId}/transcript`);
+}

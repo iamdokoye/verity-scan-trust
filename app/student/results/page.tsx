@@ -1,21 +1,105 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, FileDown, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ChevronDown, Clock, FileDown, Loader2, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { PageTitle } from "@/components/votta/PortalShell";
 import {
   apiGetMyStudent,
   apiGetStudentResults,
+  apiListMyTranscriptRequests,
+  apiRequestTranscript,
   type AcademicSummary,
+  type TranscriptRequest,
 } from "@/lib/api";
+
+function RequestStatus({ request }: { request: TranscriptRequest }) {
+  const when = new Date(request.decidedAt ?? request.createdAt).toLocaleDateString();
+  if (request.status === "pending") {
+    return (
+      <Card className="mb-6 flex items-start gap-3 border-warning/40 p-4">
+        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+        <div className="text-sm">
+          <p className="font-semibold">Transcript request sent</p>
+          <p className="text-muted-foreground">
+            Requested on {when}. The registry will review it and, once approved, your signed
+            transcript appears under Documents.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+  if (request.status === "approved") {
+    return (
+      <Card className="mb-6 flex items-start gap-3 border-success/40 p-4">
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+        <div className="text-sm">
+          <p className="font-semibold">Your transcript was issued on {when}</p>
+          <p className="text-muted-foreground">
+            It is signed and ready to download or share.{" "}
+            <Link href="/student/documents" className="font-semibold text-accent hover:underline">
+              Open Documents
+            </Link>
+          </p>
+        </div>
+      </Card>
+    );
+  }
+  return (
+    <Card className="mb-6 flex items-start gap-3 border-destructive/40 p-4">
+      <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+      <div className="text-sm">
+        <p className="font-semibold">Your last transcript request was declined ({when})</p>
+        {request.decisionNote && (
+          <p className="text-muted-foreground">Reason: {request.decisionNote}</p>
+        )}
+        <p className="text-muted-foreground">You can send a new request at any time.</p>
+      </div>
+    </Card>
+  );
+}
 
 export default function ResultsPage() {
   const [summary, setSummary] = useState<AcademicSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<number, boolean>>({ 0: true });
+  const [requests, setRequests] = useState<TranscriptRequest[]>([]);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const latest = requests[0];
+  const hasPending = latest?.status === "pending";
+
+  async function sendRequest() {
+    setSending(true);
+    try {
+      const created = await apiRequestTranscript(note);
+      setRequests((r) => [created, ...r]);
+      setRequestOpen(false);
+      setNote("");
+      toast.success("Transcript requested", {
+        description: "The registry will review your request.",
+      });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Could not send the request.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -23,6 +107,10 @@ export default function ResultsPage() {
         const student = await apiGetMyStudent();
         const s = await apiGetStudentResults(student.id);
         setSummary(s);
+        // A failure here should not hide the results themselves.
+        apiListMyTranscriptRequests()
+          .then(setRequests)
+          .catch(() => setRequests([]));
       } catch (err: unknown) {
         setError(
           err instanceof Error ? err.message : "Failed to load results."
@@ -39,8 +127,14 @@ export default function ResultsPage() {
       <PageTitle
         title="Academic Results"
         action={
-          <Button disabled title="Transcript generation coming soon">
-            <FileDown className="h-4 w-4" /> Generate Transcript
+          <Button
+            variant="hero"
+            disabled={loading || hasPending || !summary || summary.sessions.length === 0}
+            title={hasPending ? "You already have a request awaiting review" : undefined}
+            onClick={() => setRequestOpen(true)}
+          >
+            <FileDown className="h-4 w-4" />
+            {hasPending ? "Request pending" : "Request transcript"}
           </Button>
         }
       />
@@ -55,6 +149,8 @@ export default function ResultsPage() {
         </div>
       ) : (
         <>
+          {latest && <RequestStatus request={latest} />}
+
           {/* CGPA banner */}
           <Card className="mb-6 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -209,6 +305,39 @@ export default function ResultsPage() {
           )}
         </>
       )}
+
+      <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Request a transcript</DialogTitle>
+            <DialogDescription>
+              Your registry reviews every request. Once approved, a signed transcript with a
+              verification QR code is added to your Documents.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <label htmlFor="transcript-note" className="mb-1.5 block text-sm font-medium">
+              What is it for? <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <Textarea
+              id="transcript-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="e.g. Masters application at the University of Ibadan"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="glass" onClick={() => setRequestOpen(false)} disabled={sending}>
+              Cancel
+            </Button>
+            <Button variant="hero" onClick={sendRequest} disabled={sending}>
+              {sending ? "Sending…" : "Send request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
