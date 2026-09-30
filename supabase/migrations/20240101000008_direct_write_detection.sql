@@ -91,24 +91,44 @@ BEGIN
 END;
 $$;
 
-DO $$
-DECLARE
-  t text;
-BEGIN
-  FOREACH t IN ARRAY ARRAY[
-    'institutions', 'profiles', 'students', 'results', 'documents',
-    'transcript_requests', 'audit_logs', 'audit_log_checkpoints'
-  ]
-  LOOP
-    IF to_regclass('public.' || t) IS NULL THEN
-      RAISE NOTICE 'Skipping %, table does not exist.', t;
-      CONTINUE;
-    END IF;
-    EXECUTE format('DROP TRIGGER IF EXISTS direct_write_detection ON public.%I', t);
-    EXECUTE format(
-      'CREATE TRIGGER direct_write_detection
-         AFTER INSERT OR UPDATE OR DELETE ON public.%I
-         FOR EACH ROW EXECUTE FUNCTION public.record_direct_write()', t);
-  END LOOP;
-END;
-$$;
+-- One trigger per watched table.
+DROP TRIGGER IF EXISTS direct_write_detection ON public.institutions;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.institutions
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.profiles;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.students;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.students
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.results;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.results
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.documents;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.documents
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.transcript_requests;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.transcript_requests
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.audit_logs;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.audit_logs
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
+DROP TRIGGER IF EXISTS direct_write_detection ON public.audit_log_checkpoints;
+CREATE TRIGGER direct_write_detection
+  AFTER INSERT OR UPDATE OR DELETE ON public.audit_log_checkpoints
+  FOR EACH ROW EXECUTE FUNCTION public.record_direct_write();
+
