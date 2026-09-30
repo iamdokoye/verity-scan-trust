@@ -60,6 +60,60 @@ export class ApiError extends Error {
   }
 }
 
+function withToken(
+  headers: Record<string, string>,
+  attach: boolean
+): Record<string, string> {
+  const token = attach ? tokenStore.get() : null;
+  return token ? { ...headers, Authorization: `Bearer ${token}` } : headers;
+}
+
+// One refresh at a time: concurrent 401s all wait on the same request.
+let refreshInFlight: Promise<string | null> | null = null;
+function refreshAccessToken(): Promise<string | null> {
+  refreshInFlight ??= apiRefresh().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+function endSession() {
+  tokenStore.clear();
+  if (
+    typeof window !== "undefined" &&
+    !window.location.pathname.startsWith("/login")
+  ) {
+    // Full navigation on purpose: this runs outside React and should reset all
+    // in-memory state along with the session.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/login");
+  }
+}
+
+/**
+ * fetch with the current access token. If the server answers 401 (the access
+ * token expired while the app was open), refresh it once and retry; if that
+ * fails the session is over, so clear it and send the user to /login.
+ */
+async function fetchWithAuth(url: string, init: RequestInit): Promise<Response> {
+  const headers = (init.headers ?? {}) as Record<string, string>;
+  const sentToken = tokenStore.get();
+  const res = await fetch(url, { ...init, headers: withToken(headers, true) });
+  if (res.status !== 401 || !sentToken) return res;
+
+  const fresh = await refreshAccessToken();
+  if (!fresh) {
+    endSession();
+    return res;
+  }
+  const retry = await fetch(url, {
+    ...init,
+    headers: { ...headers, Authorization: `Bearer ${fresh}` },
+  });
+  if (retry.status === 401) endSession();
+  return retry;
+}
+
 type RequestOptions = {
   body?: BodyInit | Record<string, unknown>;
   headers?: Record<string, string>;
@@ -73,11 +127,6 @@ async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = { ...options.headers };
 
-  const token = tokenStore.get();
-  if (token && !options.noAuth) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   let body: BodyInit | undefined;
   if (options.body instanceof FormData) {
     body = options.body;
@@ -86,7 +135,17 @@ async function request<T>(
     body = JSON.stringify(options.body);
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, { method, headers, body });
+  const url = `${BASE_URL}${path}`;
+  // /auth/* calls (login, refresh, the startup /auth/me check) and public
+  // calls manage their own auth, so they are never refreshed-and-retried.
+  const res =
+    options.noAuth || path.startsWith("/auth/")
+      ? await fetch(url, {
+          method,
+          headers: withToken(headers, !options.noAuth),
+          body,
+        })
+      : await fetchWithAuth(url, { method, headers, body });
 
   if (res.status === 204) return undefined as T;
 
@@ -274,13 +333,8 @@ export async function apiListAuditLogs(params: {
   if (params.to) query.set("to", params.to);
   if (params.q) query.set("q", params.q);
 
-  const token = tokenStore.get();
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}/audit-logs?${query.toString()}`, {
+  const res = await fetchWithAuth(`${BASE_URL}/audit-logs?${query.toString()}`, {
     method: "GET",
-    headers,
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -463,13 +517,9 @@ export async function apiListPendingDocuments(page = 1): Promise<{
   total: number;
   pageSize: number;
 }> {
-  const token = tokenStore.get();
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(
+  const res = await fetchWithAuth(
     `${BASE_URL}/documents/pending?page=${page}&pageSize=20`,
-    { method: "GET", headers }
+    { method: "GET" }
   );
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
