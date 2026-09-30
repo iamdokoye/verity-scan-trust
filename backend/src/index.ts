@@ -1,6 +1,7 @@
 import { app } from './app';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
+import { checkStorageBucket } from './config/storageCheck';
 import { logger } from './utils/logger';
 
 const port = parseInt(env.PORT, 10);
@@ -13,6 +14,9 @@ async function start() {
     logger.error('Failed to connect to database', { error: err });
     process.exit(1);
   }
+
+  // Report a wrong storage bucket name now rather than on the first upload.
+  void checkStorageBucket();
 
   const server = app.listen(port, () => {
     logger.info(`Votta API listening on http://localhost:${port}`, {
