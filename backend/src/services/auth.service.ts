@@ -37,8 +37,13 @@ export class AuthService {
     // The custom access token hook reads public.profiles, not Supabase's
     // user_metadata — without this row every subsequent request 401s with
     // "Invalid token claims" because no role/institution can be resolved.
-    await prisma.profile.create({
-      data: {
+    // Upsert: the handle_new_user DB trigger may already have inserted this
+    // row when the auth user was created, and a plain create would then fail
+    // with a unique violation (500).
+    await prisma.profile.upsert({
+      where: { id: data.user.id },
+      update: { institutionId, role: 'student', fullName, email },
+      create: {
         id:            data.user.id,
         institutionId,
         role:          'student',
