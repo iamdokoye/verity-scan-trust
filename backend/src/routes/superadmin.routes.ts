@@ -9,5 +9,6 @@ const router = Router();
 router.use(requireAuth, requireRole('super_admin'));
 
 router.get('/stats', superAdminController.getStats);
+router.get('/integrity', superAdminController.getIntegrity);
 
 export default router;

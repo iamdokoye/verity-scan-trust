@@ -54,7 +54,7 @@ export default function SuperAdminLayout({
           to: "/super-admin/institutions",
           icon: Building2,
         },
-        { label: "Audit Log", to: "/super-admin/audit", icon: ScrollText },
+        { label: "Audit integrity", to: "/super-admin/audit", icon: ScrollText },
         { label: "Crypto Keys", to: "/super-admin/keys", icon: KeyRound },
       ]}
     >

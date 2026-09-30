@@ -109,3 +109,14 @@ GET /api/v1/verify?token=<token>
 ```bash
 supabase functions deploy healthcheck
 ```
+
+## Direct write detection
+
+Run `20240101000007_direct_write_audit_action.sql` on its own first, then
+`20240101000008_direct_write_detection.sql`. After that, any insert, update or
+delete on the watched tables that does not come from the API (connections
+labelled `application_name=votta-api`) is written to `audit_logs` as
+`DIRECT_DB_WRITE`, and shown under Super Admin > Audit integrity.
+
+This is a label, not a credential: it catches accidental and casual direct
+edits, not a determined insider. The demo seed script is also a direct write.

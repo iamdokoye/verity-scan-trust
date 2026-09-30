@@ -317,6 +317,42 @@ export async function apiGetPlatformStats(): Promise<PlatformStats> {
   return api.get<PlatformStats>("/super-admin/stats");
 }
 
+export type ChainVerification = {
+  valid: boolean;
+  brokenAt?: string;
+  reason?: "cumulative_hash_mismatch" | "entry_missing" | "entry_count_mismatch" | "batch_hash_mismatch";
+  checkpointsChecked: number;
+  entriesChecked: number;
+  uncheckpointedEntries: number;
+};
+
+export type DirectWrite = {
+  id: string;
+  targetType: string | null;
+  targetId: string | null;
+  createdAt: string;
+  metadata: {
+    operation?: string;
+    table?: string;
+    db_user?: string;
+    application_name?: string;
+    client_addr?: string;
+    changed_columns?: string[];
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+  } | null;
+};
+
+export type IntegrityReport = {
+  chain: ChainVerification;
+  directWriteCount: number;
+  directWrites: DirectWrite[];
+};
+
+export function apiGetIntegrity(): Promise<IntegrityReport> {
+  return api.get<IntegrityReport>("/super-admin/integrity");
+}
+
 export async function apiListAuditLogs(params: {
   page?: number;
   pageSize?: number;

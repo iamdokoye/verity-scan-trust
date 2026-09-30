@@ -83,6 +83,7 @@ enum AuditAction {
   INSTITUTION_DELETED
   ADMIN_PROVISIONED
   TAMPER_SIMULATION
+  DIRECT_DB_WRITE
 
   @@map("audit_action")
 }
