@@ -1,105 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Download, QrCode, X, Copy, Check, Loader2 } from "lucide-react";
+import { Award, Check, Clock, Copy, Download, FileText, History, QrCode, ScrollText } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { PageTitle } from "@/components/votta/PortalShell";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GlassCard } from "@/components/votta/GlassCard";
+import { PageHeader } from "@/components/votta/PortalShell";
 import {
   apiGetMyStudent,
   apiGetStudentDocuments,
   apiGetDocumentDownloadUrl,
   type VottaDocument,
 } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
-const VERIFY_BASE =
-  (typeof window !== "undefined"
-    ? window.location.origin
-    : process.env.NEXT_PUBLIC_APP_URL ?? "https://votta.xyz") + "/verify?token=";
+const verifyBase = () =>
+  `${typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "")}/verify?token=`;
 
 const FILTERS = ["All", "Certificates", "Transcripts", "Other"] as const;
 
-// ── QR display modal ──────────────────────────────────────────────────────────
+const typeIcon = {
+  degree_certificate: Award,
+  transcript: ScrollText,
+  other: FileText,
+} as const;
 
-function QrModal({
-  doc,
-  onClose,
-}: {
-  doc: VottaDocument;
-  onClose: () => void;
-}) {
-  const verifyUrl = `${VERIFY_BASE}${doc.verificationToken}`;
+const typeLabel = (d: VottaDocument) => d.documentType.replace(/_/g, " ");
+
+function StatusPill({ status }: { status: VottaDocument["status"] }) {
+  if (status === "approved") {
+    return (
+      <span className="rounded-full border border-success/30 px-2.5 py-0.5 text-xs font-semibold text-success">
+        Signed
+      </span>
+    );
+  }
+  const Icon = status === "superseded" ? History : Clock;
+  const bad = status === "revoked" || status === "rejected";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize",
+        bad ? "border-destructive/30 text-destructive" : "border-warning/35 text-warning",
+      )}
+    >
+      <Icon className="h-3 w-3" />
+      {status.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function QrDialog({ doc, onClose }: { doc: VottaDocument; onClose: () => void }) {
+  const verifyUrl = `${verifyBase()}${doc.verificationToken}`;
   const [copied, setCopied] = useState(false);
 
   function copy() {
-    navigator.clipboard.writeText(verifyUrl).catch(() => {});
+    navigator.clipboard
+      .writeText(verifyUrl)
+      .then(() => toast.success("Link copied"))
+      .catch(() => toast.error("Couldn't copy the link"));
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1800);
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4"
-      onClick={onClose}
-    >
-      <Card
-        className="w-full max-w-md p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <div className="text-base font-semibold text-foreground capitalize">
-              {doc.documentType.replace(/_/g, " ")}
-            </div>
-            <div className="text-xs text-muted-foreground">Verification QR</div>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* QR image (base64) or placeholder */}
-        <div className="flex justify-center py-4">
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="capitalize">{typeLabel(doc)}</DialogTitle>
+          <DialogDescription>Show this QR code to anyone who needs to verify the document.</DialogDescription>
+        </DialogHeader>
+        <div className="mx-auto w-fit rounded-3xl bg-white p-4">
           {doc.qrCodeBase64 ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={`data:image/png;base64,${doc.qrCodeBase64}`}
-              alt="QR Code"
-              className="h-56 w-56 rounded"
+              alt="Verification QR code"
+              className="h-auto w-full max-w-56"
             />
           ) : (
-            <div className="flex h-56 w-56 items-center justify-center rounded border border-dashed border-border text-xs text-muted-foreground">
+            <div className="grid h-56 w-56 max-w-full place-items-center text-xs text-neutral-500">
               QR not generated yet
             </div>
           )}
         </div>
-
-        <div className="mt-4">
-          <label className="text-xs uppercase tracking-wider text-muted-foreground">
-            Verification URL
-          </label>
-          <div className="mt-1 flex items-center gap-2 rounded-md border border-border bg-muted/40 p-2">
-            <code className="flex-1 truncate text-xs text-foreground">{verifyUrl}</code>
-            <button onClick={copy} className="text-muted-foreground hover:text-foreground">
-              {copied ? (
-                <Check className="h-4 w-4 text-emerald-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl bg-muted/60 p-2 pl-4">
+          <span className="tabular truncate font-mono text-xs">{verifyUrl}</span>
+          <Button variant="ghost" size="icon" aria-label="Copy link" onClick={copy}>
+            {copied ? <Check className="text-success" /> : <Copy />}
+          </Button>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Show this QR to any employer or institution to verify instantly.
-        </p>
-        <Button className="mt-5 w-full" variant="outline" onClick={onClose}>
-          Close
-        </Button>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function StudentDocuments() {
   const [docs, setDocs] = useState<VottaDocument[]>([]);
@@ -135,24 +137,25 @@ export default function StudentDocuments() {
       const { url } = await apiGetDocumentDownloadUrl(doc.id);
       window.open(url, "_blank");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Download failed.");
+      toast.error(err instanceof Error ? err.message : "Download failed.");
     }
   }
 
   return (
-    <div>
-      <PageTitle title="My Documents" />
+    <>
+      <PageHeader title="Documents" description="Signed by your institution and verifiable by anyone." />
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Filter documents">
         {FILTERS.map((f) => (
           <button
             key={f}
+            role="tab"
+            aria-selected={filter === f}
             onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
-              filter === f
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-card text-foreground hover:bg-muted"
-            }`}
+            className={cn(
+              "min-h-11 rounded-full px-4 text-sm font-semibold transition-colors",
+              filter === f ? "text-white [background:var(--gradient-primary)]" : "glass-subtle text-muted-foreground",
+            )}
           >
             {f}
           </button>
@@ -160,83 +163,72 @@ export default function StudentDocuments() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-52 rounded-2xl" />
+          ))}
         </div>
       ) : error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 text-center">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
+        <GlassCard className="border-destructive/30 p-6 text-center text-sm text-destructive">{error}</GlassCard>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <p className="text-base font-medium text-foreground">
+        <GlassCard className="px-6 py-14 text-center">
+          <p className="text-base font-bold">
             {filter === "All" ? "No documents yet" : `No ${filter.toLowerCase()} found`}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Documents uploaded and approved by your institution appear here.
           </p>
-        </div>
+        </GlassCard>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((d) => {
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((d, i) => {
+            const Icon = typeIcon[d.documentType] ?? FileText;
             const isApproved = d.status === "approved";
             return (
-              <Card
+              <GlassCard
                 key={d.id}
-                className={`flex flex-col gap-4 p-5 sm:flex-row sm:items-center ${
-                  isApproved ? "border-l-4 border-l-success border-border" : "border-border"
-                }`}
+                glossy
+                className="animate-rise flex flex-col p-5"
+                style={{ animationDelay: `${i * 60}ms` }}
               >
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                  <FileText className="h-5 w-5" />
+                <div className="flex items-start justify-between gap-3">
+                  <span
+                    className="grid h-11 w-11 place-items-center rounded-xl text-white"
+                    style={{ background: "var(--gradient-primary)", boxShadow: "inset 0 1px 0 var(--glass-highlight)" }}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <StatusPill status={d.status} />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold capitalize text-foreground">
-                    {d.documentType.replace(/_/g, " ")}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>Uploaded {new Date(d.createdAt).toLocaleDateString()}</span>
-                    {d.sha256Hash && (
-                      <>
-                        <span>·</span>
-                        <span className="font-mono">
-                          {d.sha256Hash.slice(0, 12)}…
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {isApproved && (
-                    <span className="mt-2 inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-success">
-                      Cryptographically Signed
-                    </span>
-                  )}
-                  {d.status !== "approved" && (
-                    <span className="mt-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium capitalize text-amber-800">
-                      {d.status.replace(/_/g, " ")}
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
+                <h2 className="mt-4 text-base font-bold capitalize">{typeLabel(d)}</h2>
+                <p className="text-xs text-muted-foreground">
+                  Uploaded {new Date(d.createdAt).toLocaleDateString()}
+                </p>
+                {d.verificationToken && (
+                  <p className="tabular mt-3 font-mono text-sm break-all">{d.verificationToken}</p>
+                )}
+                {d.sha256Hash && (
+                  <p className="tabular mt-1 truncate font-mono text-xs text-muted-foreground">
+                    {d.sha256Hash.slice(0, 20)}…
+                  </p>
+                )}
+                <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">
                   {isApproved && d.verificationToken && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setQrDoc(d)}
-                    >
-                      <QrCode className="h-4 w-4" /> View QR
+                    <Button variant="glass" size="sm" className="flex-1" onClick={() => setQrDoc(d)}>
+                      <QrCode strokeWidth={1.75} /> View QR
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => handleDownload(d)}>
-                    <Download className="h-4 w-4" /> Download
+                  <Button variant="hero" size="sm" className="flex-1" onClick={() => handleDownload(d)}>
+                    <Download strokeWidth={1.75} /> Download
                   </Button>
                 </div>
-              </Card>
+              </GlassCard>
             );
           })}
         </div>
       )}
 
-      {qrDoc && <QrModal doc={qrDoc} onClose={() => setQrDoc(null)} />}
-    </div>
+      {qrDoc && <QrDialog doc={qrDoc} onClose={() => setQrDoc(null)} />}
+    </>
   );
 }

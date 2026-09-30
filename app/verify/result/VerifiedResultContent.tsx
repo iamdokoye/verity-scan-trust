@@ -1,24 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
-import { Logo } from "@/components/votta/Logo";
-import { Card } from "@/components/ui/card";
+import { PublicPage } from "@/components/votta/PublicPage";
+import { ResultCard } from "@/components/votta/ResultCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GlassCard } from "@/components/votta/GlassCard";
 import { api } from "@/lib/api";
 import { getCachedVerifyResult, type VerifyResult } from "@/lib/verify-cache";
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1 border-b border-border py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span className="break-all text-sm font-medium text-foreground">{value}</span>
-    </div>
-  );
-}
 
 export function VerifiedResultContent() {
   const searchParams = useSearchParams();
@@ -48,85 +37,29 @@ export function VerifiedResultContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Verifying document…</p>
-      </div>
+      <PublicPage>
+        <GlassCard tier="strong" className="p-6 sm:p-8" aria-busy="true" aria-label="Verifying document">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-14 w-14 rounded-2xl" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-28 rounded-full" />
+              <Skeleton className="h-7 w-3/4" />
+            </div>
+          </div>
+          <Skeleton className="mt-6 h-40 w-full rounded-2xl" />
+        </GlassCard>
+      </PublicPage>
     );
   }
 
-  const d = result;
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="glass-panel border-b border-border bg-card px-4 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Logo />
-          <Link href="/" className="text-xs text-secondary hover:underline">
-            Verify another document
-          </Link>
-        </div>
-      </header>
-
-      <div className="bg-success px-4 py-6 text-success-foreground">
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <CheckCircle2 className="h-9 w-9" strokeWidth={2.5} />
-          <div>
-            <div className="text-xl font-bold">Document Verified</div>
-            <div className="text-sm text-success-foreground/90">
-              Cryptographic signature is valid.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <Card className="p-6">
-          {d?.studentName && (
-            <Row label="Student Name" value={d.studentName} />
-          )}
-          {d?.matricNumber && (
-            <Row label="Matric Number" value={d.matricNumber} />
-          )}
-          {d?.institution && (
-            <Row label="Institution" value={d.institution} />
-          )}
-          {d?.documentType && (
-            <Row
-              label="Document Type"
-              value={d.documentType.replace(/_/g, " ")}
-            />
-          )}
-          {d?.programme && <Row label="Programme" value={d.programme} />}
-          {d?.signedAt && (
-            <Row
-              label="Date of Issue"
-              value={new Date(d.signedAt).toLocaleDateString()}
-            />
-          )}
-          <Row
-            label="Verification Date"
-            value={new Date().toLocaleString()}
-          />
-          {d?.sha256Hash && (
-            <Row
-              label="Document Hash"
-              value={`${d.sha256Hash.slice(0, 16)}…`}
-            />
-          )}
-        </Card>
-
-        <p className="mt-4 rounded-md bg-muted p-4 text-xs leading-relaxed text-muted-foreground">
-          This document was verified against a cryptographic signature issued by{" "}
-          {d?.institution ?? "the issuing institution"}. The document content
-          has not been altered since it was signed.
-        </p>
-
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-secondary hover:underline">
-            Verify another document
-          </Link>
-        </div>
-      </main>
-    </div>
+    <PublicPage>
+      <ResultCard
+        key={token}
+        status={result?.status ?? "not_found"}
+        token={token || undefined}
+        data={result}
+      />
+    </PublicPage>
   );
 }

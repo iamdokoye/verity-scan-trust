@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { GlassCard } from "@/components/votta/GlassCard";
 import { Logo } from "@/components/votta/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,8 +44,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <GlassCard glossy tier="strong" className="animate-rise w-full max-w-md p-6 sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <Logo />
           <h1 className="mt-4 text-xl font-semibold text-foreground">
@@ -59,7 +60,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="mb-1 block text-xs font-medium text-foreground"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Email address
             </label>
@@ -77,7 +78,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-xs font-medium text-foreground"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Password
             </label>
@@ -93,19 +94,19 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
             </p>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-secondary hover:underline">
+          <Link href="/signup" className="text-accent hover:underline">
             Sign up as a student
           </Link>
         </p>
@@ -114,7 +115,7 @@ export default function LoginPage() {
             Back to verification portal
           </Link>
         </p>
-      </div>
+      </GlassCard>
     </div>
   );
 }

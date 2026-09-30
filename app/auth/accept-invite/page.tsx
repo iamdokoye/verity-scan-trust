@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 
@@ -191,10 +191,10 @@ function AcceptInviteInner() {
   if (step === "error") {
     return (
       <div className="flex flex-col items-center gap-4 py-12 text-center">
-        <div className="text-4xl">❌</div>
+        <span className="grid h-14 w-14 place-items-center rounded-2xl text-white [background:var(--gradient-danger)]"><XCircle className="h-7 w-7" strokeWidth={1.75} /></span>
         <p className="font-medium text-foreground">Invite link invalid</p>
         <p className="max-w-xs text-sm text-muted-foreground">{pageError}</p>
-        <Button variant="outline" onClick={() => router.push("/login")}>
+        <Button variant="glass" onClick={() => router.push("/login")}>
           Back to login
         </Button>
       </div>
@@ -204,7 +204,7 @@ function AcceptInviteInner() {
   if (step === "done") {
     return (
       <div className="flex flex-col items-center gap-4 py-12 text-center">
-        <div className="text-4xl">✅</div>
+        <span className="grid h-14 w-14 place-items-center rounded-2xl text-white [background:var(--gradient-success)]"><CheckCircle2 className="h-7 w-7" strokeWidth={1.75} /></span>
         <p className="font-medium text-foreground">Password set!</p>
         <p className="text-sm text-muted-foreground">
           Signing you in…
@@ -223,13 +223,13 @@ function AcceptInviteInner() {
           password to activate your account.
         </p>
         {email && (
-          <p className="mb-4 rounded-md bg-muted px-3 py-2 text-sm font-medium text-foreground">
+          <p className="mb-4 rounded-xl bg-muted/60 px-3 py-2 text-sm font-medium break-all text-foreground">
             {email}
           </p>
         )}
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-foreground">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">
           New password <span className="text-destructive">*</span>
         </label>
         <Input
@@ -242,7 +242,7 @@ function AcceptInviteInner() {
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-foreground">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">
           Confirm password <span className="text-destructive">*</span>
         </label>
         <Input
@@ -255,11 +255,11 @@ function AcceptInviteInner() {
         />
       </div>
       {formError && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {formError}
         </p>
       )}
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -277,7 +277,7 @@ function AcceptInviteInner() {
 
 export default function AcceptInvitePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2 text-center">
           <Logo />
@@ -285,7 +285,7 @@ export default function AcceptInvitePage() {
             Set your password
           </h1>
         </div>
-        <Card className="p-6 shadow-sm">
+        <Card className="p-6 sm:p-8">
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-12">

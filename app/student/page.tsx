@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, CalendarDays, ShieldCheck, Share2, Loader2 } from "lucide-react";
+import { FileText, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GlassCard } from "@/components/votta/GlassCard";
+import { PageHeader } from "@/components/votta/PortalShell";
 import {
   apiGetMyStudent,
   apiGetStudentDocuments,
@@ -14,35 +16,44 @@ import {
   type AcademicSummary,
 } from "@/lib/api";
 
-function Stat({
-  icon: Icon,
-  label,
-  value,
-  loading,
-}: {
-  icon: typeof FileText;
-  label: string;
-  value: string | number;
-  loading?: boolean;
-}) {
+/** Nigerian five-point CGPA scale. */
+const CGPA_SCALE = 5;
+
+function CgpaRing({ cgpa }: { cgpa: number | null }) {
+  const r = 70;
+  const len = 2 * Math.PI * r;
+  const pct = cgpa != null ? Math.min(cgpa / CGPA_SCALE, 1) : 0;
   return (
-    <Card className="p-5">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            {label}
-          </div>
-          {loading ? (
-            <div className="mt-1 h-7 w-12 animate-pulse rounded bg-muted" />
-          ) : (
-            <div className="text-2xl font-semibold text-foreground">{value}</div>
-          )}
-        </div>
+    <div className="relative h-44 w-44 shrink-0">
+      <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90" aria-hidden>
+        <defs>
+          <linearGradient id="cg" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="var(--blue)" />
+            <stop offset="1" stopColor="var(--blue-bright)" />
+          </linearGradient>
+        </defs>
+        <circle cx="80" cy="80" r={r} fill="none" stroke="var(--border)" strokeWidth="12" />
+        <circle
+          cx="80"
+          cy="80"
+          r={r}
+          fill="none"
+          stroke="url(#cg)"
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={len}
+          strokeDashoffset={len * (1 - pct)}
+          className="animate-fill-ring"
+          style={{ ["--ring-len" as string]: len }}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-content-center text-center">
+        <span className="tabular font-display text-4xl font-extrabold">
+          {cgpa != null ? cgpa.toFixed(2) : "—"}
+        </span>
+        <span className="text-xs text-muted-foreground">of {CGPA_SCALE.toFixed(2)} CGPA</span>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -74,97 +85,93 @@ export default function StudentDashboard() {
   }, []);
 
   const approvedDocs = docs.filter((d) => d.status === "approved");
+  const cgpa = summary?.cgpa ?? null;
 
   return (
-    <div>
-      {/* Welcome card */}
-      <Card className="mb-6 p-6">
-        {loading ? (
-          <div className="h-7 w-48 animate-pulse rounded bg-muted" />
-        ) : (
-          <>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Welcome back, {student?.fullName?.split(" ")[0] ?? "Student"}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {student?.institution?.name ?? ""}
-              {student?.matricNumber ? ` · ${student.matricNumber}` : ""}
-            </p>
-          </>
-        )}
-      </Card>
+    <>
+      <PageHeader
+        title={loading ? "Welcome back" : `Welcome back, ${student?.fullName?.split(" ")[0] ?? "Student"}`}
+        description={
+          [student?.institution?.name, student?.matricNumber].filter(Boolean).join(" · ") || undefined
+        }
+      />
 
-      {/* Stat cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <Stat
-          icon={FileText}
-          label="Approved Documents"
-          value={approvedDocs.length}
-          loading={loading}
-        />
-        <Stat
-          icon={CalendarDays}
-          label="Semesters Completed"
-          value={summary?.sessions.length ?? 0}
-          loading={loading}
-        />
-        <Stat
-          icon={ShieldCheck}
-          label="CGPA"
-          value={summary?.cgpa != null ? summary.cgpa.toFixed(2) : "—"}
-          loading={loading}
-        />
+      <GlassCard glossy tier="strong" className="flex flex-col items-center gap-6 p-6 sm:flex-row sm:p-8">
+        {loading ? <Skeleton className="h-44 w-44 rounded-full" /> : <CgpaRing cgpa={cgpa} />}
+        <div className="grid w-full flex-1 grid-cols-2 gap-3">
+          {[
+            ["Class of degree", summary?.degreeClass ?? "—"],
+            ["Matric number", student?.matricNumber ?? "—"],
+            ["Semesters completed", String(summary?.sessions.length ?? 0)],
+            ["Approved documents", String(approvedDocs.length)],
+          ].map(([k, v]) => (
+            <div key={k} className="glass-subtle rounded-xl p-4">
+              <p className="text-xs text-muted-foreground">{k}</p>
+              {loading ? (
+                <Skeleton className="mt-2 h-5 w-16" />
+              ) : (
+                <p className="tabular mt-1 text-sm font-bold break-words sm:text-base">{v}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+
+      <div className="mt-8 mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold">Recent documents</h2>
+        <Link href="/student/documents" className="text-sm font-semibold text-accent hover:underline">
+          View all
+        </Link>
       </div>
 
-      {/* Recent documents */}
-      <Card className="p-0">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h3 className="text-base font-semibold text-foreground">
-            Recent Documents
-          </h3>
-          <Link
-            href="/student/documents"
-            className="text-xs text-secondary hover:underline"
-          >
-            View all
-          </Link>
-        </div>
-        {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          </div>
-        ) : approvedDocs.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-            No approved documents yet.
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {approvedDocs.slice(0, 3).map((d) => (
-              <li key={d.id} className="flex items-center gap-4 px-5 py-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground capitalize">
-                    {d.documentType.replace(/_/g, " ")}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(d.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-                <span className="hidden rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-success sm:inline-flex">
-                  Approved
+      {loading ? (
+        <GlassCard className="divide-y divide-border/60">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4">
+              <Skeleton className="h-11 w-11 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
+            </div>
+          ))}
+        </GlassCard>
+      ) : approvedDocs.length === 0 ? (
+        <GlassCard className="px-6 py-10 text-center text-sm text-muted-foreground">
+          No approved documents yet.
+        </GlassCard>
+      ) : (
+        <ul className="grid gap-3">
+          {approvedDocs.slice(0, 3).map((d, i) => (
+            <li key={d.id}>
+              <GlassCard
+                className="animate-rise flex items-center gap-4 p-4"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <span
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white"
+                  style={{ background: "var(--gradient-primary)", boxShadow: "inset 0 1px 0 var(--glass-highlight)" }}
+                >
+                  <FileText className="h-5 w-5" strokeWidth={1.75} />
                 </span>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/student/documents">
-                    <Share2 className="h-4 w-4" /> Share
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold capitalize">
+                    {d.documentType.replace(/_/g, " ")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(d.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <Button variant="glass" size="sm" asChild>
+                  <Link href="/student/share">
+                    <Share2 strokeWidth={1.75} /> Share
                   </Link>
                 </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-    </div>
+              </GlassCard>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }

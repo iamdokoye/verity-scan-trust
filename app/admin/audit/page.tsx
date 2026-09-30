@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { apiListAuditLogs, type AuditEntry } from "@/lib/api";
 
 const ACTION_COLORS: Record<string, string> = {
-  DOCUMENT_UPLOADED: "bg-secondary/10 text-secondary",
+  DOCUMENT_UPLOADED: "bg-accent/10 text-accent",
   DOCUMENT_APPROVED: "bg-success/10 text-success",
   DOCUMENT_REJECTED: "bg-destructive/10 text-destructive",
   DOCUMENT_SUPERSEDED: "bg-warning/15 text-foreground",
@@ -18,7 +18,7 @@ const ACTION_COLORS: Record<string, string> = {
   VERIFICATION_PERFORMED: "bg-success/10 text-success",
   USER_LOGIN: "bg-muted text-muted-foreground",
   USER_LOGOUT: "bg-muted text-muted-foreground",
-  RESULT_CREATED: "bg-secondary/10 text-secondary",
+  RESULT_CREATED: "bg-accent/10 text-accent",
   RESULT_LOCKED: "bg-warning/15 text-foreground",
   CROSS_STUDENT_DUPLICATE: "bg-destructive/10 text-destructive",
 };

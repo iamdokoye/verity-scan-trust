@@ -178,7 +178,7 @@ export default function EnterResults() {
 
       {/* Step 1 */}
       <Card className="mb-6 p-6">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-secondary">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-accent">
           Step 1 — Student &amp; Session
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -200,7 +200,7 @@ export default function EnterResults() {
               <Loader2 className="absolute right-3 top-9 h-4 w-4 animate-spin text-muted-foreground" />
             )}
             {showStudentDrop && students.length > 0 && (
-              <div className="glass-panel absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+              <div className="glass-strong absolute z-10 mt-1 w-full rounded-xl shadow-lg">
                 {students.map((s) => (
                   <button
                     key={s.id}
@@ -255,7 +255,7 @@ export default function EnterResults() {
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-secondary">
+            <div className="text-xs font-semibold uppercase tracking-wider text-accent">
               Step 2 — Course Grades
             </div>
             {courses.length === 0 && (

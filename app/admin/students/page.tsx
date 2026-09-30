@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, Search, UserPlus, UserRoundSearch } from "lucide-react";
 import { PageTitle } from "@/components/votta/PortalShell";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GlassCard } from "@/components/votta/GlassCard";
 import { Input } from "@/components/ui/input";
 import {
   apiCreateStudent,
@@ -330,107 +331,142 @@ export default function StudentsList() {
       <PageTitle
         title="Students"
         action={
-          <Button onClick={() => setAddOpen(true)}>
-            <UserPlus className="h-4 w-4" /> Add Student
+          <Button variant="hero" onClick={() => setAddOpen(true)}>
+            <UserPlus strokeWidth={1.75} /> Add student
           </Button>
         }
       />
 
-      <div className="mb-4 max-w-sm">
+      <div className="relative mb-4 max-w-md">
+        <Search className="pointer-events-none absolute top-1/2 left-4 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search by name or matric..."
+          aria-label="Search students"
+          className="h-12 pl-11"
           value={query}
           onChange={(event) => handleSearch(event.target.value)}
         />
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        </div>
+        <GlassCard className="divide-y divide-border/60" aria-busy="true" aria-label="Loading students">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </GlassCard>
       ) : error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 text-center">
+        <GlassCard className="border-destructive/30 p-6 text-center">
           <p className="text-sm text-destructive">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={() => fetchStudents(query)}
-          >
+          <Button variant="glass" size="sm" className="mt-4" onClick={() => fetchStudents(query)}>
             Retry
           </Button>
-        </div>
+        </GlassCard>
       ) : students.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <p className="text-base font-medium text-foreground">
+        <GlassCard glossy className="grid place-items-center px-6 py-14 text-center">
+          <span
+            className="grid h-14 w-14 place-items-center rounded-2xl text-white"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            <UserRoundSearch className="h-7 w-7" strokeWidth={1.75} />
+          </span>
+          <h2 className="mt-4 text-lg font-bold">
             {query ? `No students match "${query}"` : "No students yet"}
-          </p>
-          <p className="text-sm text-muted-foreground">
+          </h2>
+          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             {query
-              ? "Try a different search term."
+              ? "Try a different spelling or matric number."
               : "Students will appear here once they are added."}
           </p>
-        </div>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            {query && (
+              <Button variant="glass" onClick={() => handleSearch("")}>
+                Clear search
+              </Button>
+            )}
+            <Button variant="hero" onClick={() => setAddOpen(true)}>
+              <UserPlus strokeWidth={1.75} /> Add student
+            </Button>
+          </div>
+        </GlassCard>
       ) : (
-        <Card className="overflow-hidden p-0">
-          <div className="overflow-x-auto"><table className="w-full min-w-[34rem] text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-5 py-3 text-left font-medium">Matric No.</th>
-                <th className="px-5 py-3 text-left font-medium">Name</th>
-                <th className="hidden px-5 py-3 text-left font-medium md:table-cell">
-                  Faculty
-                </th>
-                <th className="hidden px-5 py-3 text-left font-medium md:table-cell">
-                  Department
-                </th>
-                <th className="hidden px-5 py-3 text-left font-medium lg:table-cell">
-                  Programme
-                </th>
-                <th className="hidden px-5 py-3 text-center font-medium sm:table-cell">
-                  Adm. Year
-                </th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {students.map((student) => (
-                <tr key={student.id} className="hover:bg-muted/30">
-                  <td className="px-5 py-3 font-mono text-foreground">
-                    {student.matricNumber}
-                  </td>
-                  <td className="px-5 py-3 font-medium text-foreground">
-                    {student.fullName}
-                  </td>
-                  <td className="hidden px-5 py-3 text-foreground md:table-cell">
-                    {student.department?.faculty?.name ?? "-"}
-                  </td>
-                  <td className="hidden px-5 py-3 text-foreground md:table-cell">
-                    {student.department?.name ?? "-"}
-                  </td>
-                  <td className="hidden px-5 py-3 text-foreground lg:table-cell">
-                    {student.programme ?? "-"}
-                  </td>
-                  <td className="hidden px-5 py-3 text-center text-foreground sm:table-cell">
-                    {student.admissionYear ?? "-"}
-                  </td>
-                  <td className="px-5 py-3 text-right">
+        <>
+          <GlassCard className="hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs tracking-wide text-muted-foreground uppercase">
+                  <tr className="border-b border-border/60">
+                    <th className="px-5 py-3 font-medium">Matric No.</th>
+                    <th className="px-5 py-3 font-medium">Name</th>
+                    <th className="px-5 py-3 font-medium">Faculty</th>
+                    <th className="px-5 py-3 font-medium">Department</th>
+                    <th className="hidden px-5 py-3 font-medium lg:table-cell">Programme</th>
+                    <th className="px-5 py-3 text-center font-medium">Adm. Year</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr
+                      key={student.id}
+                      className="border-b border-border/40 transition-colors last:border-0 hover:bg-secondary/50"
+                    >
+                      <td className="tabular px-5 py-3.5 font-mono">{student.matricNumber}</td>
+                      <td className="px-5 py-3.5 font-semibold">{student.fullName}</td>
+                      <td className="px-5 py-3.5">{student.department?.faculty?.name ?? "-"}</td>
+                      <td className="px-5 py-3.5">{student.department?.name ?? "-"}</td>
+                      <td className="hidden px-5 py-3.5 lg:table-cell">{student.programme ?? "-"}</td>
+                      <td className="tabular px-5 py-3.5 text-center">{student.admissionYear ?? "-"}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <Link
+                          href={`/admin/students/${student.id}`}
+                          className="text-xs font-semibold whitespace-nowrap text-accent hover:underline"
+                        >
+                          View profile
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </GlassCard>
+
+          <ul className="grid gap-3 md:hidden">
+            {students.map((student) => (
+              <li key={student.id}>
+                <GlassCard className="p-4">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{student.fullName}</p>
+                      <p className="tabular font-mono text-xs text-muted-foreground">
+                        {student.matricNumber}
+                      </p>
+                    </div>
                     <Link
                       href={`/admin/students/${student.id}`}
-                      className="text-xs font-medium text-secondary hover:underline"
+                      className="glass-subtle inline-flex min-h-11 items-center rounded-xl px-3 text-xs font-semibold text-accent"
                     >
                       View profile
                     </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
-          <div className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {[student.department?.name, student.programme].filter(Boolean).join(" · ") || "-"}
+                  </p>
+                </GlassCard>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
             {students.length} student{students.length !== 1 ? "s" : ""}
             {query && ` matching "${query}"`}
-          </div>
-        </Card>
+          </p>
+        </>
       )}
 
       <AddStudentDialog

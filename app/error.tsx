@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { TriangleAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/votta/GlassCard";
 
 export default function Error({
   error,
@@ -14,30 +17,27 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn&apos;t load
-        </h1>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <GlassCard glossy tier="strong" className="animate-rise w-full max-w-md p-8 text-center sm:p-10">
+        <span
+          className="mx-auto grid h-14 w-14 place-items-center rounded-2xl text-white"
+          style={{ background: "var(--gradient-danger)", boxShadow: "inset 0 1px 0 var(--glass-highlight)" }}
+        >
+          <TriangleAlert className="h-7 w-7" strokeWidth={1.75} />
+        </span>
+        <h1 className="mt-5 text-xl font-bold">This page didn&apos;t load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back
-          home.
+          Something went wrong on our end. You can try refreshing or head back home.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={reset}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
+        <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+          <Button variant="hero" size="lg" onClick={reset}>
             Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
+          </Button>
+          <Button variant="glass" size="lg" asChild>
+            <a href="/">Go home</a>
+          </Button>
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }

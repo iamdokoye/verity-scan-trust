@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GlassCard } from "@/components/votta/GlassCard";
 import { Logo } from "@/components/votta/Logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -63,7 +64,7 @@ export default function SignupPage() {
 
   if (formState === "success") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
         <div className="w-full max-w-sm text-center">
           <Logo />
           <Card className="mt-8 p-6">
@@ -76,7 +77,7 @@ export default function SignupPage() {
               Click the link to activate your account, then sign in.
             </p>
             <Link href="/login">
-              <Button className="mt-6 w-full">Go to sign in</Button>
+              <Button variant="hero" size="lg" className="mt-6 w-full">Go to sign in</Button>
             </Link>
           </Card>
         </div>
@@ -85,8 +86,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <GlassCard glossy tier="strong" className="animate-rise w-full max-w-md p-6 sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <Logo />
           <h1 className="mt-4 text-xl font-semibold text-foreground">
@@ -100,7 +101,7 @@ export default function SignupPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Institution */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-foreground">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
               Institution
             </label>
             <Select onValueChange={setInstitutionId} value={institutionId}>
@@ -128,7 +129,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="fullName"
-              className="mb-1 block text-xs font-medium text-foreground"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Full name
             </label>
@@ -147,7 +148,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="email"
-              className="mb-1 block text-xs font-medium text-foreground"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Email address
             </label>
@@ -166,7 +167,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-xs font-medium text-foreground"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Password
             </label>
@@ -186,7 +187,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="confirm"
-              className="mb-1 block text-xs font-medium text-foreground"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Confirm password
             </label>
@@ -202,7 +203,7 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
             </p>
           )}
@@ -218,7 +219,7 @@ export default function SignupPage() {
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="text-secondary hover:underline">
+          <Link href="/login" className="text-accent hover:underline">
             Sign in
           </Link>
         </p>
@@ -227,7 +228,7 @@ export default function SignupPage() {
             Back to verification portal
           </Link>
         </p>
-      </div>
+      </GlassCard>
     </div>
   );
 }

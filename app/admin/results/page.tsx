@@ -58,7 +58,7 @@ export default function ResultsAdmin() {
               className="flex items-center justify-between px-5 py-4"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent/10 text-accent">
                   <CalendarDays className="h-5 w-5" />
                 </div>
                 <div>

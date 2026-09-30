@@ -40,15 +40,16 @@ export default function StudentLayout({
 
   return (
     <PortalShell
-      subtitle="Student Portal"
+      subtitle="Student portal"
       userName={user?.email ?? "Student"}
       userRole="Student"
       onLogout={logout}
+      tabBar
       items={[
-        { label: "Dashboard", to: "/student", icon: LayoutDashboard },
-        { label: "My Documents", to: "/student/documents", icon: FileText },
+        { label: "Overview", to: "/student", icon: LayoutDashboard },
+        { label: "Documents", to: "/student/documents", icon: FileText },
         { label: "Results", to: "/student/results", icon: GraduationCap },
-        { label: "Share Credentials", to: "/student/share", icon: Share2 },
+        { label: "Share", to: "/student/share", icon: Share2 },
       ]}
     >
       {children}
