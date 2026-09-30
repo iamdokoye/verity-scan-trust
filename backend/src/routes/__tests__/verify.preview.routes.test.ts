@@ -71,11 +71,11 @@ describe('GET /api/v1/verify/preview (as the browser calls it)', () => {
     expect(res.status).toBe(404);
   });
 
-  it('answers 502 FILE_UNAVAILABLE (not a bare 500) when storage cannot return the file', async () => {
+  it('answers 500 FILE_UNAVAILABLE (never 502/504, which proxies replace) when storage cannot return the file', async () => {
     findUnique.mockResolvedValue({ filePath: 'p', mimeType: 'application/pdf', status: 'approved' });
     downloadFile.mockRejectedValue(new Error('Storage download failed: Object not found'));
     const res = await request(app).get('/api/v1/verify/preview?token=R4RZWC3C').set('Origin', ORIGIN);
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(500);
     expect(res.body.error).toEqual({ message: 'The document file could not be retrieved.', code: 'FILE_UNAVAILABLE' });
     expect(res.headers['access-control-allow-origin']).toBe(ORIGIN);
   });

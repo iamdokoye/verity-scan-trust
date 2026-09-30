@@ -183,7 +183,7 @@ describe('getPreview()', () => {
     findUnique.mockResolvedValue(doc());
     downloadFile.mockRejectedValue(new Error('Storage download failed: bucket "votta-documents" key i/s/d/file.pdf'));
     await expect(verificationService.getPreview('ABCD2345')).rejects.toMatchObject({
-      statusCode: 502,
+      statusCode: 500,
       code: 'FILE_UNAVAILABLE',
       message: 'The document file could not be retrieved.',
     });

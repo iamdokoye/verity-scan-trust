@@ -221,7 +221,10 @@ export class VerificationService {
         filePath: document.filePath,
         error: err instanceof Error ? err.message : String(err),
       });
-      throw new AppError('The document file could not be retrieved.', 502, 'FILE_UNAVAILABLE');
+      // 500, not 502/504: proxies and CDNs in front of the API replace those
+      // with their own error page, which carries no CORS headers, so the
+      // browser could not even read this response.
+      throw new AppError('The document file could not be retrieved.', 500, 'FILE_UNAVAILABLE');
     }
     return { buffer, mimeType: document.mimeType };
   }
