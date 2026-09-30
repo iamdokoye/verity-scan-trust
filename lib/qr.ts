@@ -1,8 +1,15 @@
 /**
- * The backend stores each QR code as a complete data URI
- * ("data:image/png;base64,..."). Accept either that or bare base64 so the
- * value can be used as an <img src> without double-prefixing it.
+ * The link a verification QR code (and the "copy link" button) points at:
+ * this site's /verify page with the document's token.
+ *
+ * The token is trimmed because the database column can pad short values with
+ * spaces, and it is built from the current site address so the link always
+ * matches where the app is actually served.
  */
-export function qrImageSrc(value: string): string {
-  return value.startsWith("data:") ? value : `data:image/png;base64,${value}`;
+export function verifyUrlFor(token: string): string {
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+  return `${origin}/verify?token=${encodeURIComponent(token.trim())}`;
 }

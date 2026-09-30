@@ -1,19 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Copy, Download, Share2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/votta/PortalShell";
 import { GlassCard } from "@/components/votta/GlassCard";
 import { Button } from "@/components/ui/button";
+import { VerificationQr, downloadQrPng } from "@/components/votta/VerificationQr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGetMyStudent, apiGetStudentDocuments, type VottaDocument } from "@/lib/api";
-import { qrImageSrc } from "@/lib/qr";
+import { verifyUrlFor } from "@/lib/qr";
 import { cn } from "@/lib/utils";
-
-const verifyBase = () =>
-  `${typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "")}/verify?token=`;
 
 const label = (d: VottaDocument) => d.documentType.replace(/_/g, " ");
 
@@ -23,6 +21,7 @@ export default function SharePage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const qrRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -41,7 +40,7 @@ export default function SharePage() {
   }, []);
 
   const doc = docs.find((d) => d.id === selectedId) ?? docs[0];
-  const url = doc ? `${verifyBase()}${doc.verificationToken}` : "";
+  const url = doc?.verificationToken ? verifyUrlFor(doc.verificationToken) : "";
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
 
   function copy() {
@@ -101,22 +100,17 @@ export default function SharePage() {
                 className="mx-auto w-fit rounded-3xl bg-white p-5"
                 style={{ boxShadow: "0 20px 50px -20px color-mix(in oklab, var(--blue) 50%, transparent)" }}
               >
-                {doc.qrCodeBase64 ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={qrImageSrc(doc.qrCodeBase64)}
-                    alt={`Verification QR code for your ${label(doc)}`}
-                    className="h-auto w-full max-w-60"
+                <div className="w-60 max-w-full">
+                  <VerificationQr
+                    ref={qrRef}
+                    url={url}
+                    label={`Verification QR code for your ${label(doc)}`}
                   />
-                ) : (
-                  <div className="grid h-60 w-60 max-w-full place-items-center text-xs text-neutral-500">
-                    QR not generated yet
-                  </div>
-                )}
+                </div>
               </div>
               <p className="mt-5 text-lg font-bold capitalize">{label(doc)}</p>
               <p className="tabular mt-3 font-mono text-lg font-semibold tracking-wider break-all">
-                {doc.verificationToken}
+                {doc.verificationToken?.trim()}
               </p>
               <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
                 <ShieldCheck className="h-4 w-4" />
@@ -134,13 +128,13 @@ export default function SharePage() {
                 </Button>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {doc.qrCodeBase64 && (
-                  <Button variant="hero" size="lg" asChild>
-                    <a href={qrImageSrc(doc.qrCodeBase64)} download={`votta-${doc.verificationToken}.png`}>
-                      <Download /> Download QR
-                    </a>
-                  </Button>
-                )}
+                <Button
+                  variant="hero"
+                  size="lg"
+                  onClick={() => downloadQrPng(qrRef.current, `votta-${doc.verificationToken?.trim()}.png`)}
+                >
+                  <Download /> Download QR
+                </Button>
                 {canShare && (
                   <Button
                     variant="glass"
@@ -151,7 +145,7 @@ export default function SharePage() {
                   </Button>
                 )}
                 <Button variant="glass" size="lg" asChild>
-                  <Link href={`/verify?token=${doc.verificationToken}`}>Preview what they see</Link>
+                  <Link href={`/verify?token=${encodeURIComponent((doc.verificationToken ?? "").trim())}`}>Preview what they see</Link>
                 </Button>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">

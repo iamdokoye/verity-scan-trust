@@ -20,11 +20,9 @@ import {
   apiGetDocumentDownloadUrl,
   type VottaDocument,
 } from "@/lib/api";
-import { qrImageSrc } from "@/lib/qr";
+import { verifyUrlFor } from "@/lib/qr";
+import { VerificationQr } from "@/components/votta/VerificationQr";
 import { cn } from "@/lib/utils";
-
-const verifyBase = () =>
-  `${typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "")}/verify?token=`;
 
 const FILTERS = ["All", "Certificates", "Transcripts", "Other"] as const;
 
@@ -60,7 +58,7 @@ function StatusPill({ status }: { status: VottaDocument["status"] }) {
 }
 
 function QrDialog({ doc, onClose }: { doc: VottaDocument; onClose: () => void }) {
-  const verifyUrl = `${verifyBase()}${doc.verificationToken}`;
+  const verifyUrl = verifyUrlFor(doc.verificationToken ?? "");
   const [copied, setCopied] = useState(false);
 
   function copy() {
@@ -80,18 +78,9 @@ function QrDialog({ doc, onClose }: { doc: VottaDocument; onClose: () => void })
           <DialogDescription>Show this QR code to anyone who needs to verify the document.</DialogDescription>
         </DialogHeader>
         <div className="mx-auto w-fit rounded-3xl bg-white p-4">
-          {doc.qrCodeBase64 ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={qrImageSrc(doc.qrCodeBase64)}
-              alt="Verification QR code"
-              className="h-auto w-full max-w-56"
-            />
-          ) : (
-            <div className="grid h-56 w-56 max-w-full place-items-center text-xs text-neutral-500">
-              QR not generated yet
-            </div>
-          )}
+          <div className="w-56 max-w-full">
+            <VerificationQr url={verifyUrl} label="Verification QR code" />
+          </div>
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl bg-muted/60 p-2 pl-4">
           <span className="tabular truncate font-mono text-xs">{verifyUrl}</span>
@@ -206,7 +195,7 @@ export default function StudentDocuments() {
                   Uploaded {new Date(d.createdAt).toLocaleDateString()}
                 </p>
                 {d.verificationToken && (
-                  <p className="tabular mt-3 font-mono text-sm break-all">{d.verificationToken}</p>
+                  <p className="tabular mt-3 font-mono text-sm break-all">{d.verificationToken.trim()}</p>
                 )}
                 {d.sha256Hash && (
                   <p className="tabular mt-1 truncate font-mono text-xs text-muted-foreground">
