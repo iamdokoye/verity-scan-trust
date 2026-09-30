@@ -13,6 +13,7 @@ import {
   Trash2,
   Copy,
   Check,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -263,27 +264,33 @@ function ProvisionAdminDialog({
 
         {inviteUrl ? (
           <div className="space-y-4 py-2">
-            <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
-              ✅ Invite link generated for <strong>{form.email}</strong>
+            <div className="flex items-start gap-2 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="min-w-0 break-words">
+                Invite link generated for <strong className="break-all">{form.email}</strong>
+              </span>
             </div>
             <p className="text-xs text-muted-foreground">
               Share this link with the admin. It expires after 24 hours and
               will take them to a page where they set their own password.
             </p>
-            <div className="flex items-center gap-2 rounded-md border border-border bg-muted p-2">
-              <p className="flex-1 truncate text-xs text-muted-foreground">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl bg-muted/60 p-2 pl-3">
+              <p
+                className="tabular truncate font-mono text-xs text-muted-foreground"
+                title={inviteUrl}
+              >
                 {inviteUrl}
               </p>
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="glass"
                 className="shrink-0"
                 onClick={handleCopy}
               >
                 {copied ? (
                   <>
-                    <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                    <Check className="mr-1.5 h-3.5 w-3.5 text-success" />
                     Copied
                   </>
                 ) : (
