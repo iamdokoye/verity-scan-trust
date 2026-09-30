@@ -30,5 +30,11 @@ export function createUserAuthClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
+    // Node < 22 has no native WebSocket, and supabase-js throws when building
+    // the client without a transport — even though this client never opens a
+    // realtime connection.
+    realtime: {
+      transport: realtimeTransport,
+    },
   });
 }
