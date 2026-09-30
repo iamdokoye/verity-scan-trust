@@ -4,8 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "3001:3000"
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -37,8 +37,8 @@ services:
         # client bundle at build time. Coolify: set as a Build Variable.
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       PORT: "3000"
