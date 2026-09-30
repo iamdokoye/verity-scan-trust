@@ -34,7 +34,9 @@ services:
       args:
         # Public URL of the `backend` service above, as reachable from a
         # user's browser (not the internal docker network) — baked into the
-        # client bundle at build time. Coolify: set as a Build Variable.
+        # client bundle at build time. Coolify: set as a Build Variable, e.g.
+        # https://api.example.com/api/v1 (a bare origin also works). Changing
+        # it requires a rebuild.
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: unless-stopped
     expose:

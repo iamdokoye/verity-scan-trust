@@ -6,8 +6,17 @@
  * talks to Supabase (storage, auth).
  */
 
-const BASE_URL =
-  (process.env.NEXT_PUBLIC_API_URL as string) ?? "http://localhost:3000/api/v1";
+// The backend mounts every route under /api/v1. Accept a bare origin (e.g.
+// https://api.example.com) as well as the full URL so a deployment that omits
+// the prefix doesn't 404 on every request.
+const API_PREFIX = "/api/v1";
+const RAW_API_URL =
+  (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
+  `http://localhost:3000${API_PREFIX}`;
+const TRIMMED_API_URL = RAW_API_URL.replace(/\/+$/, "");
+const BASE_URL = TRIMMED_API_URL.endsWith(API_PREFIX)
+  ? TRIMMED_API_URL
+  : `${TRIMMED_API_URL}${API_PREFIX}`;
 
 let _accessToken: string | null = null;
 
