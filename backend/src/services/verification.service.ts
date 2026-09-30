@@ -3,7 +3,8 @@ import { storageService } from './storage.service';
 import { cryptoService } from './crypto.service';
 import { auditService } from './audit.service';
 import { VerificationStatus } from '@prisma/client';
-import { NotFoundError } from '../utils/errors';
+import { AppError, NotFoundError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 const PREVIEWABLE_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 
@@ -211,7 +212,17 @@ export class VerificationService {
       throw new NotFoundError('Document preview');
     }
 
-    const buffer = await storageService.downloadFile(document.filePath);
+    let buffer: Buffer;
+    try {
+      buffer = await storageService.downloadFile(document.filePath);
+    } catch (err) {
+      // Keep storage internals out of a public response; log them instead.
+      logger.error('Preview: stored file could not be retrieved', {
+        filePath: document.filePath,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw new AppError('The document file could not be retrieved.', 502, 'FILE_UNAVAILABLE');
+    }
     return { buffer, mimeType: document.mimeType };
   }
 

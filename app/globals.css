@@ -389,3 +389,33 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ---------- printing ---------- */
+/* Verification results are printed as a record: plain white paper, no frosted
+   glass, no animation, and no site chrome (hidden with print:hidden). */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .glass,
+  .glass-strong,
+  .glass-subtle {
+    background: #fff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+  .glossy::after {
+    display: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

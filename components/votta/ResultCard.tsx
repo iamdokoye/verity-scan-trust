@@ -116,7 +116,10 @@ export function ResultCard({
     <GlassCard
       glossy
       tier="strong"
-      className={cn("animate-rise overflow-hidden p-6 sm:p-8 print:shadow-none", isBad && "animate-shake")}
+      className={cn(
+        "animate-rise overflow-hidden p-6 sm:p-8 print:flex print:flex-col print:overflow-visible print:p-0 print:shadow-none",
+        isBad && "animate-shake",
+      )}
     >
       <div aria-hidden className={cn("-mx-6 -mt-6 mb-6 h-1 sm:-mx-8 sm:-mt-8", toneRing[meta.tone])} />
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4">

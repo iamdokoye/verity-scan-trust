@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
 import {
   BadgeCheck,
   ExternalLink,
@@ -153,7 +154,12 @@ export function DocumentPreview({
         if (cancelled) return;
         setPhase({
           kind: "unavailable",
-          why: err instanceof ApiError ? { kind: "http", status: err.status } : { kind: "network" },
+          why:
+            err instanceof ApiError && err.code === "FILE_UNAVAILABLE"
+              ? { kind: "file_missing" }
+              : err instanceof ApiError
+                ? { kind: "http", status: err.status }
+                : { kind: "network" },
         });
       });
 
@@ -174,24 +180,40 @@ export function DocumentPreview({
   const canRetry = phase.kind === "unavailable" && (phase.why.kind === "http" || phase.why.kind === "network");
 
   return (
-    <figure className="mt-7" aria-label={`Document preview: ${meta.label}`}>
+    <figure
+      className={cn(
+        "mt-7",
+        // Printed after the summary, starting on a fresh sheet; nothing is
+        // printed in place of a document that could not be shown.
+        "print:order-last print:mt-0 print:break-before-page",
+        (phase.kind === "unavailable" || phase.kind === "loading") && "print:hidden",
+      )}
+      aria-label={`Document preview: ${meta.label}`}
+    >
       <div
         className={cn(
           "relative overflow-hidden rounded-2xl bg-white ring-2",
+          "print:overflow-visible print:rounded-none print:ring-0",
           frameTone[meta.tone],
           phase.kind === "unavailable" && "bg-muted/60",
         )}
       >
         {phase.kind === "loading" && <Skeleton className="h-80 w-full rounded-none sm:h-96" />}
-        {phase.kind === "image" && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={phase.url}
-            alt="The issued document"
-            className="mx-auto max-h-[32rem] w-full object-contain object-top"
-          />
+        {(phase.kind === "image" || phase.kind === "pdf") && (
+          // Scrolls on screen so every page can be read; unrolled when printing.
+          <div className="max-h-[70vh] overflow-y-auto print:max-h-none print:overflow-visible">
+            {phase.kind === "image" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={phase.url}
+                alt="The issued document"
+                className="mx-auto block h-auto w-full object-contain print:max-h-[24.5cm] print:w-auto print:max-w-full"
+              />
+            ) : (
+              <PdfPages url={phase.url} onFail={renderFailed} />
+            )}
+          </div>
         )}
-        {phase.kind === "pdf" && <PdfFirstPage url={phase.url} onFail={renderFailed} />}
         {phase.kind === "unavailable" && failure && (
           <div className="grid min-h-56 place-items-center px-6 py-12 text-center">
             <div className="max-w-md">
@@ -230,28 +252,75 @@ export function DocumentPreview({
   );
 }
 
-function PdfFirstPage({ url, onFail }: { url: string; onFail: (openUrl: string) => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [rendered, setRendered] = useState(false);
+const MAX_PDF_PAGES = 30;
+
+async function loadPdf(url: string): Promise<PDFDocumentProxy> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
+  const data = new Uint8Array(await (await fetch(url)).arrayBuffer());
+  return pdfjs.getDocument({ data }).promise;
+}
+
+function PdfPages({ url, onFail }: { url: string; onFail: (openUrl: string) => void }) {
+  const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
+  const fail = useCallback(() => onFail(url), [onFail, url]);
 
   useEffect(() => {
     let cancelled = false;
+    loadPdf(url)
+      .then((pdf) => {
+        if (!cancelled) setDoc(pdf);
+      })
+      .catch((err) => {
+        console.error("[Votta] PDF could not be opened", err);
+        if (!cancelled) fail();
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [url, fail]);
 
-    async function render() {
+  if (!doc) return <Skeleton className="h-80 w-full rounded-none sm:h-96" />;
+
+  const shown = Math.min(doc.numPages, MAX_PDF_PAGES);
+  return (
+    <div className="space-y-3 bg-muted/40 p-2 sm:p-3 print:space-y-0 print:bg-transparent print:p-0">
+      {Array.from({ length: shown }, (_, i) => (
+        <PdfPage key={i} doc={doc} pageNumber={i + 1} onFail={fail} />
+      ))}
+      {doc.numPages > shown && (
+        <p className="py-2 text-center text-xs text-muted-foreground">
+          Showing the first {shown} of {doc.numPages} pages.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PdfPage({
+  doc,
+  pageNumber,
+  onFail,
+}: {
+  doc: PDFDocumentProxy;
+  pageNumber: number;
+  onFail: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [drawn, setDrawn] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function draw() {
       try {
-        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
-          import.meta.url,
-        ).toString();
-
-        const data = new Uint8Array(await (await fetch(url)).arrayBuffer());
-        const pdf = await pdfjs.getDocument({ data }).promise;
-        const page = await pdf.getPage(1);
+        const page = await doc.getPage(pageNumber);
         const canvas = canvasRef.current;
         if (cancelled || !canvas) return;
 
-        // Render at the displayed width (up to 2x for sharpness).
+        // Draw at the displayed width (up to 2x for sharpness).
         const cssWidth = canvas.parentElement?.clientWidth || 600;
         const base = page.getViewport({ scale: 1 });
         const scale = (cssWidth / base.width) * Math.min(window.devicePixelRatio || 1, 2);
@@ -259,27 +328,29 @@ function PdfFirstPage({ url, onFail }: { url: string; onFail: (openUrl: string) 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
-        if (!cancelled) setRendered(true);
+        if (!cancelled) setDrawn(true);
       } catch (err) {
-        console.error("[Votta] PDF preview could not be drawn", err);
-        if (!cancelled) onFail(url);
+        console.error(`[Votta] PDF page ${pageNumber} could not be drawn`, err);
+        if (!cancelled) onFail();
       }
     }
-    render();
-
+    draw();
     return () => {
       cancelled = true;
     };
-  }, [url, onFail]);
+  }, [doc, pageNumber, onFail]);
 
   return (
-    <div className="relative max-h-[32rem] overflow-hidden">
-      {!rendered && <Skeleton className="absolute inset-0 rounded-none" />}
+    <div className="relative bg-white shadow-sm print:break-inside-avoid print:shadow-none">
+      {!drawn && <Skeleton className="absolute inset-0 rounded-none" />}
       <canvas
         ref={canvasRef}
         role="img"
-        aria-label="First page of the issued document"
-        className={cn("block h-auto w-full", !rendered && "min-h-80 opacity-0")}
+        aria-label={`Page ${pageNumber} of the issued document`}
+        className={cn(
+          "block h-auto w-full print:mx-auto print:max-h-[24.5cm] print:w-auto print:max-w-full",
+          !drawn && "min-h-80 opacity-0",
+        )}
       />
     </div>
   );

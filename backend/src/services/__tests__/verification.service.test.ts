@@ -37,6 +37,7 @@ jest.mock('../../config/prisma', () => ({
 jest.mock('../storage.service', () => ({
   storageService: { downloadFile: (...a: unknown[]) => downloadFile(...a) },
 }));
+jest.mock('../../utils/logger', () => ({ logger: { error: jest.fn(), info: jest.fn(), warn: jest.fn() } }));
 jest.mock('../audit.service', () => ({ auditService: { log: jest.fn().mockResolvedValue(undefined) } }));
 
 import { verificationService } from '../verification.service';
@@ -135,6 +136,16 @@ describe('getPreview()', () => {
     findUnique.mockResolvedValue(null);
     await expect(verificationService.getPreview('NOPE0000')).rejects.toThrow();
     expect(downloadFile).not.toHaveBeenCalled();
+  });
+
+  it('reports a storage failure as FILE_UNAVAILABLE without leaking internals', async () => {
+    findUnique.mockResolvedValue(doc());
+    downloadFile.mockRejectedValue(new Error('Storage download failed: bucket "votta-documents" key i/s/d/file.pdf'));
+    await expect(verificationService.getPreview('ABCD2345')).rejects.toMatchObject({
+      statusCode: 502,
+      code: 'FILE_UNAVAILABLE',
+      message: 'The document file could not be retrieved.',
+    });
   });
 
   it('refuses file types a browser cannot render safely', async () => {

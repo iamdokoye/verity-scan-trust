@@ -25,7 +25,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40">
+    <header className="sticky top-0 z-40 print:hidden">
       <div className="glass rounded-none border-x-0 border-t-0">
         <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
           <Link href="/" className="min-w-0" aria-label="Votta home">
@@ -76,7 +76,7 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 border-t border-border/60 py-8">
+    <footer className="mt-20 border-t border-border/60 py-8 print:hidden">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
         <p className="font-medium text-foreground">Votta — tamper-proof academic records</p>
         <p>SHA-256 hashing · RSA-2048 signatures · append-only audit log</p>

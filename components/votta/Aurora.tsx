@@ -3,7 +3,7 @@ export function Aurora() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background"
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background print:hidden"
     >
       <div
         className="absolute -left-40 -top-48 h-[36rem] w-[36rem] rounded-full blur-3xl"

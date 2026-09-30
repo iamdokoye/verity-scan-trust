@@ -30,6 +30,7 @@ jest.mock('../../config/prisma', () => ({
 jest.mock('../../services/storage.service', () => ({
   storageService: { downloadFile: (...a: unknown[]) => downloadFile(...a) },
 }));
+jest.mock('../../utils/logger', () => ({ logger: { error: jest.fn(), info: jest.fn(), warn: jest.fn() } }));
 jest.mock('../../services/audit.service', () => ({ auditService: { log: jest.fn() } }));
 
 import { app } from '../../app';
@@ -68,6 +69,15 @@ describe('GET /api/v1/verify/preview (as the browser calls it)', () => {
     findUnique.mockResolvedValue(null);
     const res = await request(app).get('/api/v1/verify/preview?token=NOPE0000').set('Origin', ORIGIN);
     expect(res.status).toBe(404);
+  });
+
+  it('answers 502 FILE_UNAVAILABLE (not a bare 500) when storage cannot return the file', async () => {
+    findUnique.mockResolvedValue({ filePath: 'p', mimeType: 'application/pdf', status: 'approved' });
+    downloadFile.mockRejectedValue(new Error('Storage download failed: Object not found'));
+    const res = await request(app).get('/api/v1/verify/preview?token=R4RZWC3C').set('Origin', ORIGIN);
+    expect(res.status).toBe(502);
+    expect(res.body.error).toEqual({ message: 'The document file could not be retrieved.', code: 'FILE_UNAVAILABLE' });
+    expect(res.headers['access-control-allow-origin']).toBe(ORIGIN);
   });
 
   it('answers 400 without a token', async () => {

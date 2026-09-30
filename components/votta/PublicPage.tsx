@@ -12,7 +12,7 @@ export function PublicPage({
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className={`mx-auto w-full flex-1 px-4 py-10 sm:px-6 sm:py-14 ${width}`}>{children}</main>
+      <main className={`mx-auto w-full flex-1 px-4 py-10 sm:px-6 sm:py-14 print:max-w-none print:p-0 ${width}`}>{children}</main>
       <SiteFooter />
     </div>
   );

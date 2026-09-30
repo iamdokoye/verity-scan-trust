@@ -690,7 +690,14 @@ export async function apiGetVerifyPreview(token: string): Promise<Blob> {
   const res = await fetch(
     `${BASE_URL}/verify/preview?token=${encodeURIComponent(token)}`
   );
-  if (!res.ok) throw new ApiError(res.status, undefined, `HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(
+      res.status,
+      body?.error?.code,
+      body?.error?.message ?? `HTTP ${res.status}`
+    );
+  }
   return res.blob();
 }
 
