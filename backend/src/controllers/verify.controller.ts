@@ -29,6 +29,30 @@ export const verifyController = {
     }
   },
 
+  async previewDocument(req: Request, res: Response, next: NextFunction) {
+    try {
+      const token = (req.query.token as string)?.trim();
+      if (!token) {
+        return sendError(res, 'Verification token is required', 400, 'MISSING_TOKEN');
+      }
+
+      const { buffer, mimeType } = await verificationService.getPreview(token);
+
+      res
+        .status(200)
+        .set({
+          'Content-Type': mimeType,
+          'Content-Length': String(buffer.length),
+          'Content-Disposition': 'inline',
+          'Cache-Control': 'no-store',
+          'X-Content-Type-Options': 'nosniff',
+        })
+        .send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   getPublicKey(_req: Request, res: Response) {
     res.type('text/plain').send(env.INSTITUTION_PUBLIC_KEY_PEM);
   },

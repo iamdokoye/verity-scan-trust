@@ -15,6 +15,7 @@ import {
   ShieldOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DocumentPreview } from "@/components/votta/DocumentPreview";
 import { GlassCard } from "@/components/votta/GlassCard";
 import { StatusBadge, outcomeMeta } from "@/components/votta/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -150,6 +151,8 @@ export function ResultCard({
         </div>
       </div>
 
+      <DocumentPreview token={token} status={status} available={data?.previewAvailable} />
+
       {hasRecord && shown.length > 0 && (
         <dl className="mt-7 grid gap-px overflow-hidden rounded-2xl border border-border/60 sm:grid-cols-2">
           {shown.map((f) => (
@@ -170,14 +173,14 @@ export function ResultCard({
         </p>
       )}
 
-      {data?.sha256Hash && <HashRow hash={data.sha256Hash} />}
-
       {token && (
         <div className="mt-4 rounded-xl bg-muted/60 px-4 py-3">
           <span className="text-xs text-muted-foreground">Verification token</span>
           <p className="tabular font-mono text-sm font-semibold break-all">{token}</p>
         </div>
       )}
+
+      {data?.sha256Hash && <HashRow hash={data.sha256Hash} />}
 
       {children}
 

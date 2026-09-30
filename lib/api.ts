@@ -682,3 +682,14 @@ export async function apiBulkSaveResults(
 ): Promise<{ count: number }> {
   return api.post<{ count: number }>("/results/bulk", { body: { results } });
 }
+
+// ── Verification preview ──────────────────────────────────────────────────────
+
+/** The issued document behind a verification token (public, no account). */
+export async function apiGetVerifyPreview(token: string): Promise<Blob> {
+  const res = await fetch(
+    `${BASE_URL}/verify/preview?token=${encodeURIComponent(token)}`
+  );
+  if (!res.ok) throw new ApiError(res.status, undefined, `HTTP ${res.status}`);
+  return res.blob();
+}

@@ -1,39 +1,15 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { PublicPage } from "@/components/votta/PublicPage";
 import { ResultCard } from "@/components/votta/ResultCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GlassCard } from "@/components/votta/GlassCard";
-import { api } from "@/lib/api";
-import { getCachedVerifyResult, type VerifyResult } from "@/lib/verify-cache";
+import { useVerifyResult } from "@/lib/use-verify-result";
 
 export function VerifiedResultContent() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
-  const [result, setResult] = useState<VerifyResult | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    const cached = getCachedVerifyResult(token);
-    if (cached) {
-      setResult(cached);
-      setLoading(false);
-      return;
-    }
-    api
-      .get<VerifyResult>(`/verify?token=${encodeURIComponent(token)}`, {
-        noAuth: true,
-      })
-      .then(setResult)
-      .catch(() => setResult(null))
-      .finally(() => setLoading(false));
-  }, [token]);
+  const token = useSearchParams().get("token") ?? "";
+  const { result, loading } = useVerifyResult(token);
 
   if (loading) {
     return (

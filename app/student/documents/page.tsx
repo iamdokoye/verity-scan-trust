@@ -20,6 +20,7 @@ import {
   apiGetDocumentDownloadUrl,
   type VottaDocument,
 } from "@/lib/api";
+import { qrImageSrc } from "@/lib/qr";
 import { cn } from "@/lib/utils";
 
 const verifyBase = () =>
@@ -82,7 +83,7 @@ function QrDialog({ doc, onClose }: { doc: VottaDocument; onClose: () => void })
           {doc.qrCodeBase64 ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={`data:image/png;base64,${doc.qrCodeBase64}`}
+              src={qrImageSrc(doc.qrCodeBase64)}
               alt="Verification QR code"
               className="h-auto w-full max-w-56"
             />

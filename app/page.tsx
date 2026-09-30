@@ -143,7 +143,9 @@ export default function VerifyHome() {
   }
 
   async function handleVerify() {
-    await verifyToken(token);
+    // Accept a pasted or scanned link (".../verify?token=ABC123") as well as
+    // a bare token.
+    await verifyToken(extractVerificationToken(token));
   }
 
   useEffect(() => {

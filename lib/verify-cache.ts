@@ -20,6 +20,9 @@ export type VerifyResult = {
   signedAt?: string;
   verifiedAt?: string;
   message?: string;
+  /** The issued file can be shown to the verifier (GET /verify/preview). */
+  previewAvailable?: boolean;
+  fileMimeType?: string;
 };
 
 const PREFIX = "votta_verify_result:";

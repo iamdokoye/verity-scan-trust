@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { PublicPage } from "@/components/votta/PublicPage";
 import { ResultCard } from "@/components/votta/ResultCard";
+import { useVerifyResult } from "@/lib/use-verify-result";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -57,6 +57,7 @@ export function NotFoundContent() {
     }
   }
 
+  const { result } = useVerifyResult(initialToken);
   const resultStatus: VerifyStatus =
     status === "revoked" || status === "superseded" ? status : "not_found";
   const canRetry = resultStatus === "not_found";
@@ -64,8 +65,10 @@ export function NotFoundContent() {
   return (
     <PublicPage>
       <ResultCard
+       
         status={resultStatus}
         token={initialToken || undefined}
+        data={result}
         reason={reason}
       >
         {canRetry && (

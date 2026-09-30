@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/votta/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGetMyStudent, apiGetStudentDocuments, type VottaDocument } from "@/lib/api";
+import { qrImageSrc } from "@/lib/qr";
 import { cn } from "@/lib/utils";
 
 const verifyBase = () =>
@@ -103,7 +104,7 @@ export default function SharePage() {
                 {doc.qrCodeBase64 ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={`data:image/png;base64,${doc.qrCodeBase64}`}
+                    src={qrImageSrc(doc.qrCodeBase64)}
                     alt={`Verification QR code for your ${label(doc)}`}
                     className="h-auto w-full max-w-60"
                   />
@@ -135,7 +136,7 @@ export default function SharePage() {
               <div className="grid gap-2 sm:grid-cols-2">
                 {doc.qrCodeBase64 && (
                   <Button variant="hero" size="lg" asChild>
-                    <a href={`data:image/png;base64,${doc.qrCodeBase64}`} download={`votta-${doc.verificationToken}.png`}>
+                    <a href={qrImageSrc(doc.qrCodeBase64)} download={`votta-${doc.verificationToken}.png`}>
                       <Download /> Download QR
                     </a>
                   </Button>

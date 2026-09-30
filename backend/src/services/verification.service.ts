@@ -3,6 +3,9 @@ import { storageService } from './storage.service';
 import { cryptoService } from './crypto.service';
 import { auditService } from './audit.service';
 import { VerificationStatus } from '@prisma/client';
+import { NotFoundError } from '../utils/errors';
+
+const PREVIEWABLE_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 
 export class VerificationService {
   async verifyByToken(params: {
@@ -61,6 +64,7 @@ export class VerificationService {
         documentType: document.documentType,
         studentName: document.student.fullName,
         institution: document.institution.name,
+        ...this.previewInfo(document),
       };
     }
 
@@ -79,6 +83,7 @@ export class VerificationService {
         message: 'This document has been revoked by the issuing institution.',
         reason: document.revocationReason,
         revokedAt: document.revokedAt,
+        ...this.previewInfo(document),
       };
     }
 
@@ -130,6 +135,7 @@ export class VerificationService {
         status: 'tampered',
         message:
           'Document integrity compromised. The file content has been altered since issuance.',
+        ...this.previewInfo(document),
       };
     }
 
@@ -149,6 +155,7 @@ export class VerificationService {
         status: 'invalid_signature',
         message:
           'Document signature is invalid. This document was not issued by the claimed institution.',
+        ...this.previewInfo(document),
       };
     }
 
@@ -172,7 +179,38 @@ export class VerificationService {
       sha256Hash: document.sha256Hash,
       signedAt: document.signedAt,
       verifiedAt: new Date().toISOString(),
+      ...this.previewInfo(document),
     };
+  }
+
+  /** Whether the stored file can be shown to a verifier, and its type. */
+  private previewInfo(document: { mimeType: string }) {
+    return PREVIEWABLE_MIME_TYPES.includes(document.mimeType)
+      ? { previewAvailable: true, fileMimeType: document.mimeType }
+      : { previewAvailable: false };
+  }
+
+  /**
+   * The stored file behind a verification token, for display on the public
+   * result page. Only documents that have been issued are returned (approved,
+   * revoked or superseded), and only for file types a browser can render.
+   */
+  async getPreview(token: string): Promise<{ buffer: Buffer; mimeType: string }> {
+    const document = await prisma.document.findUnique({
+      where: { verificationToken: token },
+      select: { filePath: true, mimeType: true, status: true },
+    });
+
+    if (
+      !document ||
+      !['approved', 'revoked', 'superseded'].includes(document.status) ||
+      !PREVIEWABLE_MIME_TYPES.includes(document.mimeType)
+    ) {
+      throw new NotFoundError('Document preview');
+    }
+
+    const buffer = await storageService.downloadFile(document.filePath);
+    return { buffer, mimeType: document.mimeType };
   }
 
   private async logVerification(params: {
