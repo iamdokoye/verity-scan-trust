@@ -241,7 +241,7 @@ export default function DocsAdmin() {
             {total} document{total !== 1 ? "s" : ""} awaiting review
           </div>
           <Card className="overflow-hidden p-0">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full min-w-[34rem] text-sm">
               <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-5 py-3 text-left font-medium">Student</th>
@@ -334,12 +334,12 @@ export default function DocsAdmin() {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
           </Card>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
               <span>
                 Page {page} of {totalPages}
               </span>

@@ -33,7 +33,7 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card className="p-5">
+    <Card className="p-4 sm:p-5">
       <div className="flex items-start justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/10 text-secondary">
           <Icon className="h-5 w-5" />
@@ -88,7 +88,7 @@ export default function AdminDash() {
       </div>
 
       {/* Stat cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           icon={Users}
           label="Total Students"
@@ -164,7 +164,7 @@ export default function AdminDash() {
           <h3 className="mb-4 text-base font-semibold text-foreground">
             Quick Actions
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
             {QUICK_ACTIONS.map((a) => (
               <Link
                 key={a.label}

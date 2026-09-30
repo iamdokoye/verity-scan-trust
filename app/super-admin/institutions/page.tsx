@@ -155,7 +155,7 @@ function InstitutionDialog({
               onChange={field("name")}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">
                 Acronym <span className="text-destructive">*</span>
@@ -440,9 +440,9 @@ export default function InstitutionsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Institutions
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">

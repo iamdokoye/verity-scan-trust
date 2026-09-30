@@ -247,7 +247,7 @@ export default function DepartmentsPage() {
         </div>
       ) : (
         <Card className="overflow-hidden p-0">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full min-w-[34rem] text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-5 py-3 text-left font-medium">Faculty</th>
@@ -276,7 +276,7 @@ export default function DepartmentsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </Card>
       )}
 

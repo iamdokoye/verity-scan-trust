@@ -123,7 +123,7 @@ export default function ResultsPage() {
                     </button>
                     {isOpen && (
                       <div className="border-t border-border">
-                        <table className="w-full text-sm">
+                        <div className="overflow-x-auto"><table className="w-full min-w-[34rem] text-sm">
                           <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
                             <tr>
                               <th className="px-5 py-2 text-left font-medium">
@@ -199,7 +199,7 @@ export default function ResultsPage() {
                               </td>
                             </tr>
                           </tfoot>
-                        </table>
+                        </table></div>
                       </div>
                     )}
                   </Card>

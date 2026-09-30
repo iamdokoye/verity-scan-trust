@@ -147,7 +147,7 @@ export default function AuditPage() {
             No audit logs found.
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full min-w-[34rem] text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-5 py-3 text-left font-medium">Timestamp</th>
@@ -192,10 +192,10 @@ export default function AuditPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
 
-        <div className="flex items-center justify-between border-t border-border px-5 py-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 text-xs text-muted-foreground">
           <span>
             Showing {logs.length ? (page - 1) * pageSize + 1 : 0}-
             {Math.min(page * pageSize, total)} of {total}

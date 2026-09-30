@@ -23,6 +23,7 @@ function buildApp() {
     });
   });
   // Same file-related branches as the global handler in app.ts
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     if (err instanceof AppError) return res.status(err.statusCode).json({ code: err.code, message: err.message });
     if (err.message?.includes('File too large')) return res.status(400).json({ code: 'FILE_TOO_LARGE' });

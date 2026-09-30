@@ -176,7 +176,7 @@ export default function SuperAdminDashboard() {
       )}
 
       {/* Stat cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           icon={Building2}
           label="Institutions"
