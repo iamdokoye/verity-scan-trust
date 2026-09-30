@@ -91,6 +91,16 @@ describe('verifyByToken() previewAvailable', () => {
     expect(await verify()).toMatchObject({ status: 'superseded', previewAvailable: true });
   });
 
+  it('says why when the stored file cannot be retrieved', async () => {
+    findUnique.mockResolvedValue(doc());
+    downloadFile.mockRejectedValue(new Error('object not found'));
+    expect(await verify()).toMatchObject({
+      status: 'tampered',
+      previewAvailable: false,
+      previewUnavailableReason: 'file_missing',
+    });
+  });
+
   it('is not offered for an unknown token', async () => {
     findUnique.mockResolvedValue(null);
     const r = await verify('NOPE0000');

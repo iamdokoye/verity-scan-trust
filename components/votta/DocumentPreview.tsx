@@ -3,16 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
+  ExternalLink,
   FileQuestion,
   FileWarning,
   FileX,
   History,
+  RefreshCw,
   ShieldOff,
   type LucideIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { outcomeMeta, type Tone } from "@/components/votta/StatusBadge";
-import { apiGetVerifyPreview } from "@/lib/api";
+import { ApiError, apiGetVerifyPreview } from "@/lib/api";
 import type { VerifyStatus } from "@/lib/verify-cache";
 import { cn } from "@/lib/utils";
 
@@ -39,38 +42,101 @@ const frameTone: Record<Tone, string> = {
   neutral: "ring-border",
 };
 
+/** Why there is nothing to show, in words a verifier can act on. */
+type Why =
+  | { kind: "not_found" }
+  | { kind: "file_missing" }
+  | { kind: "no_preview" }
+  | { kind: "http"; status: number }
+  | { kind: "network" }
+  | { kind: "render"; openUrl: string };
+
 type Phase =
   | { kind: "loading" }
   | { kind: "image"; url: string }
   | { kind: "pdf"; url: string }
-  | { kind: "unavailable" };
+  | { kind: "unavailable"; why: Why };
+
+function explain(why: Why): { title: string; body: string } {
+  switch (why.kind) {
+    case "not_found":
+      return {
+        title: "No document found for this token",
+        body: "There is no issued document to show.",
+      };
+    case "file_missing":
+      return {
+        title: "The original file is missing",
+        body: "It could not be retrieved from storage, so it cannot be shown or checked.",
+      };
+    case "no_preview":
+      return {
+        title: "This file type can't be previewed",
+        body: "The result above still applies to the document.",
+      };
+    case "http":
+      return {
+        title: "The document couldn't be loaded",
+        body:
+          why.status === 404
+            ? "The server has no preview for this document (HTTP 404). If this keeps happening, the server may need updating."
+            : `The server couldn't provide the file (HTTP ${why.status}).`,
+      };
+    case "network":
+      return {
+        title: "The document couldn't be loaded",
+        body: "The server could not be reached. Check your connection and try again.",
+      };
+    case "render":
+      return {
+        title: "This PDF couldn't be drawn here",
+        body: "Your browser was unable to display it. You can open it directly instead.",
+      };
+  }
+}
 
 /**
  * The issued document behind a verification token, with a stamp showing the
  * outcome of the check. Shows the stored file: an image as-is, or the first
- * page of a PDF. For an unknown token there is nothing to show, so a
- * placeholder carries the "not found" stamp instead.
+ * page of a PDF. When there is nothing to show it says why, and offers a
+ * retry or a direct link where that can help.
  */
 export function DocumentPreview({
   token,
   status,
   available,
+  unavailableReason,
 }: {
   token?: string;
   status: VerifyStatus;
   available?: boolean;
+  unavailableReason?: "file_missing";
 }) {
   const meta = outcomeMeta[status];
   const Icon = stampIcon[status];
-  const canShow = Boolean(token) && status !== "not_found" && available !== false;
-  const [phase, setPhase] = useState<Phase>(
-    canShow ? { kind: "loading" } : { kind: "unavailable" },
+
+  const knownWhy: Why | null =
+    !token || status === "not_found"
+      ? { kind: "not_found" }
+      : unavailableReason === "file_missing"
+        ? { kind: "file_missing" }
+        : available === false
+          ? { kind: "no_preview" }
+          : null;
+
+  const [fetched, setPhase] = useState<Phase>({ kind: "loading" });
+  // What the result already tells us wins over anything the fetch found. It is
+  // derived on every render because the result can arrive after first paint.
+  const phase: Phase = knownWhy ? { kind: "unavailable", why: knownWhy } : fetched;
+  const [attempt, setAttempt] = useState(0);
+
+  const renderFailed = useCallback(
+    (openUrl: string) => setPhase({ kind: "unavailable", why: { kind: "render", openUrl } }),
+    [],
   );
 
-  const showUnavailable = useCallback(() => setPhase({ kind: "unavailable" }), []);
-
   useEffect(() => {
-    if (!canShow || !token) return;
+    if (knownWhy || !token) return;
     let cancelled = false;
     let objectUrl: string | null = null;
 
@@ -80,17 +146,32 @@ export function DocumentPreview({
         if (cancelled) return;
         if (blob.type.startsWith("image/")) setPhase({ kind: "image", url: objectUrl });
         else if (blob.type === "application/pdf") setPhase({ kind: "pdf", url: objectUrl });
-        else setPhase({ kind: "unavailable" });
+        else setPhase({ kind: "unavailable", why: { kind: "no_preview" } });
       })
-      .catch(() => {
-        if (!cancelled) setPhase({ kind: "unavailable" });
+      .catch((err: unknown) => {
+        console.error("[Votta] document preview failed", err);
+        if (cancelled) return;
+        setPhase({
+          kind: "unavailable",
+          why: err instanceof ApiError ? { kind: "http", status: err.status } : { kind: "network" },
+        });
       });
 
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [token, canShow]);
+    // knownWhy is derived from the props below, so those are the real inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, attempt, Boolean(knownWhy)]);
+
+  function retry() {
+    setPhase({ kind: "loading" });
+    setAttempt((n) => n + 1);
+  }
+
+  const failure = phase.kind === "unavailable" ? explain(phase.why) : null;
+  const canRetry = phase.kind === "unavailable" && (phase.why.kind === "http" || phase.why.kind === "network");
 
   return (
     <figure className="mt-7" aria-label={`Document preview: ${meta.label}`}>
@@ -110,19 +191,27 @@ export function DocumentPreview({
             className="mx-auto max-h-[32rem] w-full object-contain object-top"
           />
         )}
-        {phase.kind === "pdf" && <PdfFirstPage url={phase.url} onFail={showUnavailable} />}
-        {phase.kind === "unavailable" && (
-          <div className="grid h-56 place-items-center px-6 text-center">
-            <div>
+        {phase.kind === "pdf" && <PdfFirstPage url={phase.url} onFail={renderFailed} />}
+        {phase.kind === "unavailable" && failure && (
+          <div className="grid min-h-56 place-items-center px-6 py-12 text-center">
+            <div className="max-w-md">
               <Icon className="mx-auto h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
-              <p className="mt-3 text-sm font-semibold">
-                {status === "not_found" ? "No document found for this token" : "Document preview unavailable"}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {status === "not_found"
-                  ? "There is no issued document to show."
-                  : "The result above still applies to this document."}
-              </p>
+              <p className="mt-3 text-sm font-semibold">{failure.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{failure.body}</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {canRetry && (
+                  <Button variant="glass" size="sm" onClick={retry}>
+                    <RefreshCw strokeWidth={1.75} /> Try again
+                  </Button>
+                )}
+                {phase.why.kind === "render" && (
+                  <Button variant="glass" size="sm" asChild>
+                    <a href={phase.why.openUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink strokeWidth={1.75} /> Open the document
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -141,7 +230,7 @@ export function DocumentPreview({
   );
 }
 
-function PdfFirstPage({ url, onFail }: { url: string; onFail: () => void }) {
+function PdfFirstPage({ url, onFail }: { url: string; onFail: (openUrl: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rendered, setRendered] = useState(false);
 
@@ -171,8 +260,9 @@ function PdfFirstPage({ url, onFail }: { url: string; onFail: () => void }) {
         canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
         if (!cancelled) setRendered(true);
-      } catch {
-        if (!cancelled) onFail();
+      } catch (err) {
+        console.error("[Votta] PDF preview could not be drawn", err);
+        if (!cancelled) onFail(url);
       }
     }
     render();

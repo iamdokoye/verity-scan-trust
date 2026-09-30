@@ -127,10 +127,11 @@ export default function SharePage() {
                   {copied ? <Check className="text-success" /> : <Copy />}
                 </Button>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
                 <Button
                   variant="hero"
                   size="lg"
+                  className="h-auto min-h-12 whitespace-normal py-2 text-center"
                   onClick={() => downloadQrPng(qrRef.current, `votta-${doc.verificationToken?.trim()}.png`)}
                 >
                   <Download /> Download QR
@@ -139,12 +140,13 @@ export default function SharePage() {
                   <Button
                     variant="glass"
                     size="lg"
+                    className="h-auto min-h-12 whitespace-normal py-2 text-center"
                     onClick={() => navigator.share({ title: `Verify my ${label(doc)}`, url }).catch(() => {})}
                   >
                     <Share2 /> Share…
                   </Button>
                 )}
-                <Button variant="glass" size="lg" asChild>
+                <Button variant="glass" size="lg" className="h-auto min-h-12 whitespace-normal py-2 text-center" asChild>
                   <Link href={`/verify?token=${encodeURIComponent((doc.verificationToken ?? "").trim())}`}>Preview what they see</Link>
                 </Button>
               </div>

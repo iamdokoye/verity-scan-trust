@@ -97,6 +97,7 @@ export function ResultCard({
   const Icon = icons[status];
   const isBad = meta.tone === "danger";
   const why = reason ?? data?.reason ?? undefined;
+  const fileMissing = status === "tampered" && data?.previewUnavailableReason === "file_missing";
 
   const fields: { label: string; value?: string; mono?: boolean; full?: boolean }[] = [
     { label: "Institution", value: data?.institution },
@@ -147,11 +148,20 @@ export function ResultCard({
         <div className="min-w-0">
           <StatusBadge status={status} />
           <h1 className="mt-3 text-2xl leading-tight sm:text-3xl">{copy[status].headline}</h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy[status].body}</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {fileMissing
+              ? "The issued file could not be retrieved from storage, so its integrity cannot be confirmed. Do not accept this document, and contact the institution."
+              : copy[status].body}
+          </p>
         </div>
       </div>
 
-      <DocumentPreview token={token} status={status} available={data?.previewAvailable} />
+      <DocumentPreview
+        token={token}
+        status={status}
+        available={data?.previewAvailable}
+        unavailableReason={data?.previewUnavailableReason}
+      />
 
       {hasRecord && shown.length > 0 && (
         <dl className="mt-7 grid gap-px overflow-hidden rounded-2xl border border-border/60 sm:grid-cols-2">

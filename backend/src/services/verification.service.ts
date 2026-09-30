@@ -116,6 +116,8 @@ export class VerificationService {
       return {
         status: 'tampered',
         message: 'Document integrity check failed. File could not be retrieved.',
+        previewAvailable: false,
+        previewUnavailableReason: 'file_missing',
       };
     }
 
