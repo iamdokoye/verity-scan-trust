@@ -1,6 +1,6 @@
 import { supabase, createUserAuthClient } from '../config/supabase';
 import { prisma } from '../config/prisma';
-import { AuthError } from '../utils/errors';
+import { AppError, AuthError } from '../utils/errors';
 
 export class AuthService {
   async login(email: string, password: string) {
@@ -33,6 +33,13 @@ export class AuthService {
       },
     });
     if (error || !data.user) throw new AuthError(error?.message ?? 'Signup failed');
+
+    // For an already-registered email Supabase returns an obfuscated user
+    // (random id, no identities) instead of an error; inserting a profile for
+    // it would violate profiles_id_fkey and surface as a 500.
+    if (data.user.identities?.length === 0) {
+      throw new AppError('An account with this email already exists', 409, 'EMAIL_EXISTS');
+    }
 
     // The custom access token hook reads public.profiles, not Supabase's
     // user_metadata — without this row every subsequent request 401s with
