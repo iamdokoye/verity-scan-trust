@@ -23,6 +23,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+# Docker sets HOSTNAME to the container ID, which Next's standalone server would
+# bind to instead of all interfaces, breaking the healthcheck and port mapping.
+ENV HOSTNAME=0.0.0.0
 
 # `output: "standalone"` in next.config.ts traces only the deps each route
 # actually needs into .next/standalone, so the runtime image doesn't need
