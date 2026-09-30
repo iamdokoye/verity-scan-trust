@@ -67,8 +67,8 @@ function explain(why: Why): { title: string; body: string } {
       };
     case "file_missing":
       return {
-        title: "The original file is missing",
-        body: "It could not be retrieved from storage, so it cannot be shown or checked.",
+        title: "The original file couldn't be retrieved",
+        body: "The server could not read it from storage, so it cannot be shown or checked.",
       };
     case "no_preview":
       return {

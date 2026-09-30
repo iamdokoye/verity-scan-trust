@@ -23,7 +23,7 @@ export type VerifyResult = {
   /** The issued file can be shown to the verifier (GET /verify/preview). */
   previewAvailable?: boolean;
   fileMimeType?: string;
-  /** Set when the file is known to be unavailable, e.g. missing from storage. */
+  /** Set when the file is known to be unavailable, e.g. storage could not return it. */
   previewUnavailableReason?: "file_missing";
 };
 
